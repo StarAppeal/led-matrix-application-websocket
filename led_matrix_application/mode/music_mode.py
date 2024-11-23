@@ -1,3 +1,5 @@
+#TODO: there is a bug somewhere, it won't be displayed on the matrix (probably because of threading issues)
+
 import os
 import threading
 import time
