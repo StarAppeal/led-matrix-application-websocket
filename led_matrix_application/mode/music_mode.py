@@ -1,18 +1,12 @@
-#TODO: there is a bug somewhere, it won't be displayed on the matrix (probably because of threading issues)
-
-import os
 import threading
 import time
 from urllib.request import urlopen
 
-import spotipy
 from mode.abstract_mode import AbstractMode
 from PIL import Image
-from spotipy.oauth2 import SpotifyOAuth
 from utils import get_rgb_matrix
 
 graphics = get_rgb_matrix().get("graphics")
-
 
 IMAGE_SIZE = 50, 50
 IMAGE_SIZE_FULLSCREEN = 64, 64
@@ -29,20 +23,6 @@ class MusicMode(AbstractMode):
 
         self.offscreen_canvas = matrix.CreateFrameCanvas()
 
-        scope = "user-read-currently-playing"
-        username = os.getenv("SPOTIFY_USER")
-        client_id = os.getenv("SPOTIFY_CLIENT_ID")
-        client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
-        redirect_uri = os.getenv("SPOTIFY_REDIRECT_URI")
-        auth_manager = SpotifyOAuth(
-            scope=scope,
-            username=username,
-            client_id=client_id,
-            client_secret=client_secret,
-            redirect_uri=redirect_uri,
-        )
-        self.spotipy = spotipy.Spotify(auth_manager=auth_manager)
-
         self.song_data = None
         self.text = None
         self.image = None
@@ -54,21 +34,16 @@ class MusicMode(AbstractMode):
         self.space_width = self.one_char_width * 4
         self.total_width = 0
         self.offset_left = 0
-        self.song_data_thread = None
         self.is_mode_active = False
         self.lock = threading.Lock()
 
     def start(self):
         self.matrix.Clear()
-        self.update_song_data()
+        #self.update_song_data()
         self.is_mode_active = True
-
-        self.song_data_thread = threading.Thread(target=self.update_song_data_loop)
-        self.song_data_thread.start()
 
     def stop(self):
         self.is_mode_active = False
-        self.song_data_thread.join()
 
     def update_settings(self, settings):
         with self.lock:
@@ -96,7 +71,7 @@ class MusicMode(AbstractMode):
     def update_display(self):
         with self.lock:
             if self.song_data is None or (
-                self.image is None and self.image_fullscreen is None
+                    self.image is None and self.image_fullscreen is None
             ):
                 self.matrix.SetImage(self.logo, 20, 20, False)
                 return
@@ -140,16 +115,10 @@ class MusicMode(AbstractMode):
 
             self.offscreen_canvas = self.matrix.SwapOnVSync(self.offscreen_canvas)
 
-    def update_song_data(self):
-        try:
-            new_song_data = self.spotipy.currently_playing(additional_types=["episode"])
-        except Exception as e:
-            print(f"Error in update_song_data: {e}")
-            return
-
+    def update_song_data(self, new_song_data):
         if new_song_data is not None and (
-            self.song_data is None
-            or new_song_data["item"]["id"] != self.song_data["item"]["id"]
+                self.song_data is None
+                or new_song_data["item"]["id"] != self.song_data["item"]["id"]
         ):
             self.song_data = new_song_data
             if self.song_data["currently_playing_type"] == "track":
@@ -187,8 +156,3 @@ class MusicMode(AbstractMode):
     def display_fullscreen_image(self):
         self.offscreen_canvas.SetImage(self.image_fullscreen, 0, 0, False)
         self.offscreen_canvas = self.matrix.SwapOnVSync(self.offscreen_canvas)
-
-    def update_song_data_loop(self):
-        while self.is_mode_active:
-            self.update_song_data()
-            time.sleep(1)
