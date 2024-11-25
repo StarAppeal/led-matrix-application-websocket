@@ -6,7 +6,6 @@ import os
 from ws.wsclient import WebsocketClient
 from ws.wsmethods import WebsocketMethods
 
-# led_matrix_controller.update_state(db.get_state())
 ws_methods = WebsocketMethods(led_matrix_controller)
 
 wsclient = WebsocketClient(
@@ -17,9 +16,9 @@ wsclient = WebsocketClient(
     on_error=ws_methods.on_error,
     on_close=ws_methods.on_close,
     on_ping=ws_methods.on_ping,
-    on_stop=lambda: print("Stopped")
+    on_stop=lambda: print("Stopped"),
+    error_queue=led_matrix_controller.error_queue
 )
-
 
 threading.Thread(target=wsclient.run).start()
 threading.Thread(target=led_matrix_controller.run).start()

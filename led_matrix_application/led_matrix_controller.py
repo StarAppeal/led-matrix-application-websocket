@@ -1,3 +1,5 @@
+import traceback
+
 from mode.clock_mode import ClockMode
 from mode.idle_mode import IdleMode
 from mode.image_mode import ImageMode
@@ -10,7 +12,8 @@ RGBMatrixOptions = get_rgb_matrix().get("RGBMatrixOptions")
 
 
 class LEDMatrixController:
-    def __init__(self):
+    def __init__(self, error_queue):
+        self.error_queue = error_queue
         options = RGBMatrixOptions()
         options.rows = 64
         options.cols = 64
@@ -52,4 +55,14 @@ class LEDMatrixController:
 
     def run(self):
         while True:
-            self.update_display()
+            try:
+                self.update_display()
+            except Exception as e:
+                error_message = {
+                    "type": "ERROR",
+                    "message": str(e),
+                    "traceback": traceback.format_exc(),
+                }
+                self.error_queue.put(error_message)
+                print(f"Error in LEDMatrixController: {e}")
+                self.switch_mode("idle")

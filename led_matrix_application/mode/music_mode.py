@@ -39,7 +39,6 @@ class MusicMode(AbstractMode):
 
     def start(self):
         self.matrix.Clear()
-        #self.update_song_data()
         self.is_mode_active = True
 
     def stop(self):
