@@ -1,6 +1,7 @@
 import queue
 import ssl
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import websocket
 import threading
@@ -22,7 +23,7 @@ class WebsocketClient:
         self.on_stop = on_stop
         self.error_queue = led_matrix_controller.error_queue
         self.error_queue_running = True
-        self.latest_mode = None
+        self.current_mode = None
 
     def send_error_messages(self):
         while self.error_queue_running:
@@ -53,19 +54,26 @@ class WebsocketClient:
 
     def on_open(self, ws):
         print("Connection opened")
+        self.send_message(ws, {"type": "GET_SETTINGS"})
         self.send_message(ws, {"type": "GET_STATE"})
 
     def on_message(self, ws, message):
         print("Message received")
         json_message = json.loads(message)
-        print(self.latest_mode)
-        print("Current Time is: ", datetime.now())
+        print("current mode: " + str(self.current_mode))
 
         if "type" not in json_message:
             # Broadcasted message from server
             self.handle_state_update(ws, json_message)
-        elif json_message["type"] == "SPOTIFY_UPDATE" and self.latest_mode == "music":
+        elif json_message["type"] == "SETTINGS":
+            settings = json_message["payload"]
+            timezone = settings["timezone"]
+            self.led_matrix_controller.modes["clock"].timezone = ZoneInfo(timezone)
+        elif json_message["type"] == "SPOTIFY_UPDATE" and self.current_mode == "music":
             self.handle_spotify_update(json_message)
+        elif json_message["type"] == "WEATHER_UPDATE" and self.current_mode == "clock":
+            print("WEATHER_UPDATE")
+            self.led_matrix_controller.modes["clock"].update_weather_data(json_message["payload"])
         elif json_message["type"] == "STATE":
             self.handle_state_update(ws, json_message["payload"])
 
@@ -85,11 +93,16 @@ class WebsocketClient:
     def handle_state_update(self, ws, state):
         self.led_matrix_controller.update_state(state)
         new_mode = state["global"]["mode"]
-        if self.latest_mode != "music" and new_mode == "music":
+        if self.current_mode != "music" and new_mode == "music":
             self.send_message(ws, {"type": "GET_SPOTIFY_UPDATES"})
-        elif self.latest_mode == "music" and new_mode != "music":
+        elif self.current_mode == "music" and new_mode != "music":
             self.send_message(ws, {"type": "STOP_SPOTIFY_UPDATES"})
-        self.latest_mode = new_mode
+
+        if self.current_mode != "clock" and new_mode == "clock":
+            self.send_message(ws, {"type": "GET_WEATHER_UPDATES"})
+        elif self.current_mode == "clock" and new_mode != "clock":
+            self.send_message(ws, {"type": "STOP_WEATHER_UPDATES"})
+        self.current_mode = new_mode
 
     def handle_spotify_update(self, message):
         print("SPOTIFY_UPDATE")

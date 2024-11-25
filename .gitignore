@@ -1,6 +1,4 @@
-led_matrix_application/webapp
 led_matrix_application/rgbmatrix
-led_matrix_application/state.json
 led_matrix_application/images
 __pycache__
 .*
