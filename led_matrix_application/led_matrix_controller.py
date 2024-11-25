@@ -65,4 +65,3 @@ class LEDMatrixController:
                 }
                 self.error_queue.put(error_message)
                 print(f"Error in LEDMatrixController: {e}")
-                self.switch_mode("idle")
