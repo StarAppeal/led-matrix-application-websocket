@@ -54,8 +54,7 @@ class WebsocketClient:
 
     def on_open(self, ws):
         print("Connection opened")
-        self.send_message(ws, {"type": "GET_SETTINGS"})
-        self.send_message(ws, {"type": "GET_STATE"})
+
 
     def on_message(self, ws, message):
         print("Message received")

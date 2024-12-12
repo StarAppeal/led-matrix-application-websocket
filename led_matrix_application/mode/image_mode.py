@@ -3,6 +3,9 @@ import time
 
 from mode.abstract_mode import AbstractMode
 from PIL import Image, ImageSequence
+import re
+from io import BytesIO
+import base64
 
 
 class ImageMode(AbstractMode):
@@ -26,7 +29,10 @@ class ImageMode(AbstractMode):
             self.matrix.Clear()
             self.offscreen_canvas.Clear()
 
-            img = Image.open(f"images/{settings['image']}")
+            image_data = re.sub('^data:image/.+;base64,', '', settings['image'])
+            decoded_image = BytesIO(base64.b64decode(image_data))
+
+            img = Image.open(decoded_image)
             self.current_frame = 0
             self.frame_durations = []
             if img.format == "GIF":
