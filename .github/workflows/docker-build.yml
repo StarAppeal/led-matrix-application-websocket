@@ -1,0 +1,34 @@
+name: Build and Release Docker Image
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        run: |
+          docker build -t led-matrix-application-websocket:${{ github.ref_name }} .
+
+      - name: Save Docker Image as tar
+        run: |
+          docker save -o led-matrix-application-websocket-${{ github.ref_name }}.tar led-matrix-application-websocket:${{ github.ref_name }}
+
+      - name: Create GitHub Release and Upload Image
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          files: led-matrix-application-websocket-${{ github.ref_name }}.tar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
