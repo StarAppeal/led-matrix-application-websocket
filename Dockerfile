@@ -1,17 +1,19 @@
-FROM --platform=linux/arm/v6 balenalib/raspberry-pi-python:3.8-buster-run
+FROM --platform=linux/arm/v6 balenalib/raspberry-pi-python:3.9-buster-run
 
+# Arbeitsverzeichnis für Installationen und temporäre Dateien
 WORKDIR /app
 
+# Systempakete installieren
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     make \
     git \
     python3-dev \
-    cython3 \
+    python3-pip \
+    pkg-config \
+    libssl-dev \
     libgraphicsmagick++-dev \
     libsdl2-dev \
-    libssl-dev \
-    pkg-config \
     curl \
     && curl https://sh.rustup.rs -sSf | sh -s -- -y && \
     export PATH="$HOME/.cargo/bin:$PATH" && \
@@ -19,25 +21,40 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     cargo --version && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-ENV PATH="/root/.cargo/bin:${PATH}"
+# Repariere und aktualisiere Pip
+RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3
 
+# Installiere eine neuere Version von Cython
+RUN python3 -m pip install --no-cache-dir --ignore-installed "Cython>=0.29.30" && \
+    ln -s $(command -v cython) /usr/bin/cython3
+
+# Setze Pfade für Rust und OpenSSL
+ENV PATH="/root/.cargo/bin:${PATH}"
 ENV OPENSSL_DIR="/usr"
 ENV OPENSSL_LIB_DIR="/usr/lib/arm-linux-gnueabihf"
 ENV OPENSSL_INCLUDE_DIR="/usr/include"
 
+# Source Code in das Image kopieren
+COPY src/ /app/
+
+RUN cat requirements.txt
+RUN pip install -r requirements.txt
+
+# RPI-RGB-LED-Matrix bauen und rgbmatrix kopieren
 RUN git clone --depth 1 https://github.com/hzeller/rpi-rgb-led-matrix.git && \
-    cd rpi-rgb-led-matrix && \
+    cd rpi-rgb-led-matrix/bindings/python && \
     make build-python && \
-    make install-python && \
-    cd ..
+    mkdir "/app/led_matrix_application/rgbmatrix" && \
+    echo "Copying rgbmatrix to /app/led_matrix_application/rgbmatrix" && \
+    cp -r rgbmatrix/* /app/led_matrix_application/rgbmatrix && \
 
-RUN pip install --no-cache-dir poetry==1.5.1
+# Arbeitsverzeichnis wechseln für den Start des Codes
+WORKDIR /app/led_matrix_application
 
-COPY pyproject.toml poetry.lock ./
-RUN poetry config virtualenvs.create false && poetry install --no-dev --no-root
+RUN rm /app/requirements.txt && \
+    rm -rf /app/rpi-rgb-led-matrix && \
+    rm -rf /app/poetry.lock && \
+    rm -rf /app/pyproject.toml
 
-COPY . .
-
-ENV LED_CONFIG="production"
-
-CMD ["python3", "led_matrix_application/main.py"]
+# Startbefehl für den Container
+CMD ["python3", "main.py"]

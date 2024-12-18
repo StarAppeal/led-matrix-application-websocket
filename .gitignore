@@ -1,5 +1,5 @@
-led_matrix_application/rgbmatrix
-led_matrix_application/images
+src/led_matrix_application/rgbmatrix
+src/led_matrix_application/images
 __pycache__
 .env
 .idea*
