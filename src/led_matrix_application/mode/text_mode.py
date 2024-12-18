@@ -1,10 +1,8 @@
-import time
-
+import asyncio
 from mode.abstract_mode import AbstractMode
 from utils import get_rgb_matrix
 
 graphics = get_rgb_matrix().get("graphics")
-
 
 class TextMode(AbstractMode):
     def __init__(self, matrix):
@@ -15,15 +13,15 @@ class TextMode(AbstractMode):
         self.frame = 0
         self.line_list = []
         self.total_height = 0
-        self.last_frame_time = time.time()
+        self.last_frame_time = asyncio.get_event_loop().time()
 
-    def start(self):
+    async def start(self):
         pass
 
-    def stop(self):
+    async def stop(self):
         pass
 
-    def update_settings(self, settings):
+    async def update_settings(self, settings):
         self.settings = settings
         if self.size != self.settings["size"]:
             self.font.LoadFont(f"fonts/tamzen/{self.settings['size']}.bdf")
@@ -74,13 +72,13 @@ class TextMode(AbstractMode):
             offset_left = (64 - width) // 2
         return offset_left
 
-    def update_display(self):
+    async def update_display(self):
         if self.size is None:
             return
 
         self.offscreen_canvas.Clear()
 
-        current_time = time.time()
+        current_time = asyncio.get_event_loop().time()
         time_delta = current_time - self.last_frame_time
         self.last_frame_time = current_time
 

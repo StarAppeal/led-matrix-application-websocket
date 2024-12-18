@@ -1,12 +1,10 @@
-import time
+import asyncio
 from datetime import date, datetime
-
 from mode.abstract_mode import AbstractMode
 from PIL import Image
 from utils import get_rgb_matrix
 
 graphics = get_rgb_matrix().get("graphics")
-
 
 class ClockMode(AbstractMode):
     def __init__(self, matrix):
@@ -20,16 +18,16 @@ class ClockMode(AbstractMode):
         self.timezone = None
         self.has_loaded = False
 
-    def start(self):
+    async def start(self):
         self.matrix.Clear()
 
-    def stop(self):
+    async def stop(self):
         self.has_loaded = False
 
-    def update_settings(self, settings):
+    async def update_settings(self, settings):
         self.settings = settings
 
-    def update_display(self):
+    async def update_display(self):
         if self.has_loaded is False:
             return
         self.offscreen_canvas.Clear()
@@ -41,7 +39,7 @@ class ClockMode(AbstractMode):
         graphics.DrawText(
             self.offscreen_canvas, self.font, 10, 16, display_color, time_hours
         )
-        if time.mktime(aware_time.timetuple()) % 2 == 0:
+        if aware_time.second % 2 == 0:
             graphics.DrawText(
                 self.offscreen_canvas, self.font, 27, 15, display_color, ":"
             )
@@ -53,7 +51,6 @@ class ClockMode(AbstractMode):
         graphics.DrawText(
             self.offscreen_canvas, self.font, 5, 58, display_color, display_date
         )
-        graphics.DrawText(self.offscreen_canvas, self.font, 20, 58, display_color, ".")
 
         self.draw_icon(4, 24)
         graphics.DrawText(
@@ -61,10 +58,9 @@ class ClockMode(AbstractMode):
         )
 
         self.offscreen_canvas = self.matrix.SwapOnVSync(self.offscreen_canvas)
+        await asyncio.sleep(0.1)
 
-        time.sleep(0.1)
-
-    def update_weather_data(self, data):
+    async def update_weather_data(self, data):
         print("Refreshing weather data " + str(data))
         try:
             path = f"icons/clock/{data['weather']['icon']['raw']}.png"

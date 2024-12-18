@@ -1,7 +1,5 @@
-import threading
-import time
+import asyncio
 from urllib.request import urlopen
-
 from mode.abstract_mode import AbstractMode
 from PIL import Image
 from utils import get_rgb_matrix
@@ -12,7 +10,6 @@ IMAGE_SIZE = 50, 50
 IMAGE_SIZE_FULLSCREEN = 64, 64
 COLOR_WHITE = graphics.Color(255, 255, 255)
 TEXT_SPEED = 20
-
 
 class MusicMode(AbstractMode):
     def __init__(self, matrix):
@@ -27,7 +24,7 @@ class MusicMode(AbstractMode):
         self.text = None
         self.image = None
         self.image_fullscreen = None
-        self.last_frame_time = time.time()
+        self.last_frame_time = asyncio.get_event_loop().time()
         self.frame = 0
         self.one_char_width = self.font.CharacterWidth(0x0020)
         self.text_width = 0
@@ -35,86 +32,83 @@ class MusicMode(AbstractMode):
         self.total_width = 0
         self.offset_left = 0
         self.is_mode_active = False
-        self.lock = threading.Lock()
 
-    def start(self):
+    async def start(self):
         self.matrix.Clear()
         self.is_mode_active = True
 
-    def stop(self):
+    async def stop(self):
         self.is_mode_active = False
 
-    def update_settings(self, settings):
-        with self.lock:
-            if self.song_data is None:
-                self.settings = settings
-                return
+    async def update_settings(self, settings):
+        if self.song_data is None:
+            self.settings = settings
+            return
 
-            if self.song_data["currently_playing_type"] == "track":
-                image_url = self.song_data["item"]["album"]["images"][2]["url"]
-            else:
-                image_url = self.song_data["item"]["images"][2]["url"]
-            if settings["fullscreen"]:
-                self.settings = settings
-                if self.image_fullscreen is None:
-                    self.image_fullscreen = self.process_image(
-                        image_url, IMAGE_SIZE_FULLSCREEN
-                    )
-                self.display_fullscreen_image()
-            else:
-                if self.image is None:
-                    self.image = self.process_image(image_url, IMAGE_SIZE)
-                self.last_frame_time = time.time()
-                self.settings = settings
+        if self.song_data["currently_playing_type"] == "track":
+            image_url = self.song_data["item"]["album"]["images"][2]["url"]
+        else:
+            image_url = self.song_data["item"]["images"][2]["url"]
+        if settings["fullscreen"]:
+            self.settings = settings
+            if self.image_fullscreen is None:
+                self.image_fullscreen = self.process_image(
+                    image_url, IMAGE_SIZE_FULLSCREEN
+                )
+            await self.display_fullscreen_image()
+        else:
+            if self.image is None:
+                self.image = self.process_image(image_url, IMAGE_SIZE)
+            self.last_frame_time = asyncio.get_event_loop().time()
+            self.settings = settings
 
-    def update_display(self):
-        with self.lock:
-            if self.song_data is None or (
-                    self.image is None and self.image_fullscreen is None
-            ):
-                self.matrix.SetImage(self.logo, 20, 20, False)
-                return
+    async def update_display(self):
+        if self.song_data is None or (
+                self.image is None and self.image_fullscreen is None
+        ):
+            self.matrix.SetImage(self.logo, 20, 20, False)
+            return
 
-            if self.settings["fullscreen"]:
-                return
+        if self.settings["fullscreen"]:
+            return
 
-            self.offscreen_canvas.Clear()
+        self.offscreen_canvas.Clear()
 
+        graphics.DrawText(
+            self.offscreen_canvas,
+            self.font,
+            self.offset_left,
+            61,
+            COLOR_WHITE,
+            self.text,
+        )
+
+        if self.text_width > self.offscreen_canvas.width:
             graphics.DrawText(
                 self.offscreen_canvas,
                 self.font,
-                self.offset_left,
+                self.offset_left + self.total_width,
                 61,
                 COLOR_WHITE,
                 self.text,
             )
 
-            if self.text_width > self.offscreen_canvas.width:
-                graphics.DrawText(
-                    self.offscreen_canvas,
-                    self.font,
-                    self.offset_left + self.total_width,
-                    61,
-                    COLOR_WHITE,
-                    self.text,
-                )
+        self.offscreen_canvas.SetImage(self.image, 7, 2, False)
 
-            self.offscreen_canvas.SetImage(self.image, 7, 2, False)
+        current_time = asyncio.get_event_loop().time()
+        time_delta = current_time - self.last_frame_time
+        self.last_frame_time = current_time
 
-            current_time = time.time()
-            time_delta = current_time - self.last_frame_time
-            self.last_frame_time = current_time
+        if self.text_width > self.offscreen_canvas.width:
+            self.frame = (self.frame + TEXT_SPEED * time_delta) % self.total_width
+            self.offset_left = round(
+                max((self.offscreen_canvas.width - self.text_width) // 2, 0)
+                - self.frame
+            )
 
-            if self.text_width > self.offscreen_canvas.width:
-                self.frame = (self.frame + TEXT_SPEED * time_delta) % self.total_width
-                self.offset_left = round(
-                    max((self.offscreen_canvas.width - self.text_width) // 2, 0)
-                    - self.frame
-                )
+        self.offscreen_canvas = self.matrix.SwapOnVSync(self.offscreen_canvas)
 
-            self.offscreen_canvas = self.matrix.SwapOnVSync(self.offscreen_canvas)
-
-    def update_song_data(self, new_song_data):
+    async def update_song_data(self, new_song_data):
         if new_song_data is not None and (
                 self.song_data is None
                 or new_song_data["item"]["id"] != self.song_data["item"]["id"]
@@ -141,7 +135,7 @@ class MusicMode(AbstractMode):
                     image_url, IMAGE_SIZE_FULLSCREEN
                 )
                 self.image = None
-                self.display_fullscreen_image()
+                await self.display_fullscreen_image()
             else:
                 self.image = self.process_image(image_url, IMAGE_SIZE)
                 self.image_fullscreen = None
@@ -152,6 +146,6 @@ class MusicMode(AbstractMode):
         except Exception as e:
             print(f"Error in process_image: {e}")
 
-    def display_fullscreen_image(self):
+    async def display_fullscreen_image(self):
         self.offscreen_canvas.SetImage(self.image_fullscreen, 0, 0, False)
         self.offscreen_canvas = self.matrix.SwapOnVSync(self.offscreen_canvas)
