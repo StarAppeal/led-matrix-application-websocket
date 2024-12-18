@@ -1,10 +1,10 @@
-FROM --platform=linux/arm/v6 balenalib/raspberry-pi-python:3.9-buster-run
+FROM --platform=linux/arm/v6 balenalib/raspberry-pi-python:3.9-bullseye-run
 
 # Arbeitsverzeichnis für Installationen und temporäre Dateien
 WORKDIR /app
 
 # Systempakete installieren
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -o Acquire::Retries=5 -o Acquire::http::Timeout="60" -y --no-install-recommends \
     build-essential \
     make \
     git \
@@ -14,12 +14,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl-dev \
     libgraphicsmagick++-dev \
     libsdl2-dev \
+    libopenjp2-7 \
+    libopenblas-dev \
     curl \
-    && curl https://sh.rustup.rs -sSf | sh -s -- -y && \
-    export PATH="$HOME/.cargo/bin:$PATH" && \
-    rustc --version && \
-    cargo --version && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Repariere und aktualisiere Pip
 RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3
