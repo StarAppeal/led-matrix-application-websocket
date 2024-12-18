@@ -12,7 +12,7 @@ podman pull ghcr.io/starappeal/led-matrix-application-websocket:latest
 
 ## Running the Docker Image
 ### On a Raspberry Pi
-When running on a Raspberry Pi, the container does not require the `--platform` flag. However, you **must run the container as privileged** to access hardware resources. Use the following command:
+When running on a Raspberry Pi, you **must run the container as privileged** to access hardware resources. Use the following command:
 
 ```bash
 podman run --rm -it --privileged --env-file .env ghcr.io/starappeal/led-matrix-application-websocket:latest
@@ -39,9 +39,6 @@ The `.env` file must include the following variables:
 - `USE_EMULATOR`: Set to `True` when running locally to use the RGBMatrixEmulator.
 - `WEBSOCKET_URL`: The URL of the WebSocket server the application will connect to.
 - `JWT_TOKEN`: The JWT token used for authentication.
-
-## Forwarding Ports
-Make sure to forward port `8888` when running the container with the emulator to expose the application on your host machine. 
 
 ## Example `.env` File
 Here is an example `.env` file:
