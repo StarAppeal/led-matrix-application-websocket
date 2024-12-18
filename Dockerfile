@@ -44,9 +44,10 @@ RUN pip install -r requirements.txt
 RUN git clone --depth 1 https://github.com/hzeller/rpi-rgb-led-matrix.git && \
     cd rpi-rgb-led-matrix/bindings/python && \
     make build-python && \
+    make install-python && \
     mkdir "/app/led_matrix_application/rgbmatrix" && \
     echo "Copying rgbmatrix to /app/led_matrix_application/rgbmatrix" && \
-    cp -r rgbmatrix/* /app/led_matrix_application/rgbmatrix && \
+    cp -r rgbmatrix/* /app/led_matrix_application/rgbmatrix
 
 # Arbeitsverzeichnis wechseln für den Start des Codes
 WORKDIR /app/led_matrix_application
