@@ -50,7 +50,8 @@ jobs:
           IMAGE_TAG_VERSION="${VERSION}"
           
           echo "🚀 Building the image with tags: ${IMAGE_TAG_LATEST} and ${IMAGE_TAG_VERSION}"
-          docker buildx build --platform linux/arm/v6 \
+          docker buildx create --use
+          docker buildx build --platform linux/amd64,linux/arm/v6,linux/arm/v7 \
             -t ghcr.io/${REPOSITORY_OWNER_LOWERCASE}/${IMAGE_NAME}:${IMAGE_TAG_LATEST} \
             -t ghcr.io/${REPOSITORY_OWNER_LOWERCASE}/${IMAGE_NAME}:${IMAGE_TAG_VERSION} \
             --push .
