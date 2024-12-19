@@ -90,12 +90,13 @@ class TextMode(AbstractMode):
             )
 
         offset_top = max((64 - self.total_height) // 2, 0) - self.frame - self.size
+        rounded_offset_top = int(round(offset_top))
 
         for i, (line, offset_left) in enumerate(self.line_list):
             trimmed_line = line[:-1]
 
-            y1 = offset_top + ((i + 1) * self.font.height)
-            y2 = offset_top + ((i + 2) * self.font.height) + self.total_height
+            y1 = rounded_offset_top + ((i + 1) * self.font.height)
+            y2 = rounded_offset_top + ((i + 2) * self.font.height) + self.total_height
 
             if 0 <= y1 < 64 + self.font.height:
                 graphics.DrawText(
