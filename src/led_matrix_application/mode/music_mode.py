@@ -109,6 +109,9 @@ class MusicMode(AbstractMode):
         self.offscreen_canvas = self.matrix.SwapOnVSync(self.offscreen_canvas)
 
     async def update_song_data(self, new_song_data):
+        if new_song_data["currently_playing_type"] == "ad":
+            # just ignore ads
+            return
         if new_song_data is not None and (
                 self.song_data is None
                 or new_song_data["item"]["id"] != self.song_data["item"]["id"]
