@@ -11,7 +11,7 @@ RGBMatrix = get_rgb_matrix().get("RGBMatrix")
 RGBMatrixOptions = get_rgb_matrix().get("RGBMatrixOptions")
 
 class LEDMatrixController:
-    def __init__(self, error_queue):
+    def __init__(self, error_queue, target_fps=120):
         self.error_queue = error_queue
         options = RGBMatrixOptions()
         options.rows = 64
@@ -27,6 +27,9 @@ class LEDMatrixController:
         }
         self.current_mode = None
         self.mode_started = False
+        self.target_fps = target_fps
+        self.sleep_time = 1 / target_fps
+
 
     async def switch_mode(self, mode_name):
         self.mode_started = False
@@ -64,4 +67,4 @@ class LEDMatrixController:
                 }
                 self.error_queue.put(error_message)
                 print(f"Error in LEDMatrixController: {e}")
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(self.sleep_time)
