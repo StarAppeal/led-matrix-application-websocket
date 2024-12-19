@@ -1,4 +1,5 @@
 # --- Stage 1: Build-Abhängigkeiten und Kompilation ---
+# change it like that: copy only requirements.txt, and copy later the led_matrix_application folder from host
 FROM --platform=linux/arm/v6 balenalib/raspberry-pi-python:3.9-bullseye AS builder
 
 # Arbeitsverzeichnis
@@ -10,6 +11,9 @@ RUN apt-get update && apt-get install -o Acquire::Retries=5 -o Acquire::http::Ti
     make \
     git \
     python3-dev \
+    pkg-config \
+    libssl-dev \
+    python3-pip \
     curl \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -18,9 +22,11 @@ RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3
 RUN python3 -m pip install --no-cache-dir "Cython>=0.29.30" && \
     ln -s $(command -v cython) /usr/bin/cython3
 
-# Kopiere den Source Code und installiere Python-Abhängigkeiten
-COPY src/ /app/
+COPY src/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+RUN rm requirements.txt
+
+COPY src/led_matrix_application /app/led_matrix_application
 
 # RPI-RGB-LED-Matrix bauen
 RUN git clone --depth 1 https://github.com/hzeller/rpi-rgb-led-matrix.git && \
@@ -29,7 +35,7 @@ RUN git clone --depth 1 https://github.com/hzeller/rpi-rgb-led-matrix.git && \
     mkdir "/app/led_matrix_application/rgbmatrix" && \
     cp -r rgbmatrix/* /app/led_matrix_application/rgbmatrix
 
-# --- Stage 2: Finales schlankes Image ---
+# --- Stage 2: Finales schlankes Image (use buster later?)---
 FROM --platform=linux/arm/v6 balenalib/raspberry-pi-python:3.9-bullseye-run
 
 # Arbeitsverzeichnis
@@ -39,13 +45,14 @@ WORKDIR /app
 RUN apt-get update && apt-get install -o Acquire::Retries=5 -y --no-install-recommends \
     libtiff5 \
     libopenjp2-7 \
-    libopenblas-dev \
-    libgraphicsmagick++-dev \
-    libsdl2-dev \
+    libxcb1 \
+    libxcb-render0 \
+    libxcb-shm0 \
+    libopenblas0 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Kopiere nur die minimal notwendigen Dateien aus der Build-Stage
-COPY --from=builder /app/led_matrix_application /app/led_matrix_application
+COPY --from=builder /app/led_matrix_application .
 COPY --from=builder /usr/local/lib/python3.9 /usr/local/lib/python3.9
 
 # Setze ENV für OpenSSL
@@ -54,5 +61,4 @@ ENV OPENSSL_LIB_DIR="/usr/lib/arm-linux-gnueabihf"
 ENV OPENSSL_INCLUDE_DIR="/usr/include"
 
 # Startbefehl für den Container
-WORKDIR /app/led_matrix_application
 CMD ["python3", "main.py"]
