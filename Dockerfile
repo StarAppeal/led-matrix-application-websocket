@@ -26,6 +26,7 @@ COPY src/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 RUN rm requirements.txt
 
+# Kopiere die Anwendung
 COPY src/led_matrix_application /app/led_matrix_application
 
 # RPI-RGB-LED-Matrix bauen
