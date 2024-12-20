@@ -65,6 +65,6 @@ class LEDMatrixController:
                     "message": str(e),
                     "traceback": traceback.format_exc(),
                 }
-                self.error_queue.put(error_message)
+                await self.error_queue.put(error_message)
                 print(f"Error in LEDMatrixController: {e}")
             await asyncio.sleep(self.sleep_time)
