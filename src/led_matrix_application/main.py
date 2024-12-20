@@ -2,8 +2,9 @@ import asyncio
 import logging
 import os
 from controller import led_matrix_controller
-from src.led_matrix_application.utils import setup_logging
+from utils import setup_logging
 from ws.wsclient import WebsocketClient
+
 
 async def main():
     setup_logging()
@@ -22,6 +23,7 @@ async def main():
     websocket_task = asyncio.create_task(wsclient.run())
 
     await asyncio.gather(controller_task, websocket_task)
+
 
 if __name__ == "__main__":
     asyncio.run(main())
