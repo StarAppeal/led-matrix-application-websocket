@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from urllib.request import urlopen
 from mode.abstract_mode import AbstractMode
 from PIL import Image
@@ -10,6 +11,7 @@ IMAGE_SIZE = 50, 50
 IMAGE_SIZE_FULLSCREEN = 64, 64
 COLOR_WHITE = graphics.Color(255, 255, 255)
 TEXT_SPEED = 20
+
 
 class MusicMode(AbstractMode):
     def __init__(self, matrix):
@@ -32,6 +34,7 @@ class MusicMode(AbstractMode):
         self.total_width = 0
         self.offset_left = 0
         self.is_mode_active = False
+        self.logger = logging.getLogger(__name__)
 
     async def start(self):
         self.matrix.Clear()
@@ -147,7 +150,7 @@ class MusicMode(AbstractMode):
         try:
             return Image.open(urlopen(url)).resize(size).convert("RGB")
         except Exception as e:
-            print(f"Error in process_image: {e}")
+            self.logger.error(f"Error in process_image: {e}")
 
     async def display_fullscreen_image(self):
         self.offscreen_canvas.SetImage(self.image_fullscreen, 0, 0, False)

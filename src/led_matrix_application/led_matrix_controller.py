@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import traceback
 from mode.clock_mode import ClockMode
 from mode.idle_mode import IdleMode
@@ -29,6 +30,7 @@ class LEDMatrixController:
         self.mode_started = False
         self.target_fps = target_fps
         self.sleep_time = 1 / target_fps
+        self.logger = logging.getLogger(__name__)
 
 
     async def switch_mode(self, mode_name):
@@ -66,5 +68,5 @@ class LEDMatrixController:
                     "traceback": traceback.format_exc(),
                 }
                 await self.error_queue.put(error_message)
-                print(f"Error in LEDMatrixController: {e}")
+                self.logger.error(f"Error in LEDMatrixController: {e}")
             await asyncio.sleep(self.sleep_time)

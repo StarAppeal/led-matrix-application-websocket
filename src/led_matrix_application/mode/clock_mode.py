@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from datetime import date, datetime
 from mode.abstract_mode import AbstractMode
 from PIL import Image
@@ -17,6 +18,7 @@ class ClockMode(AbstractMode):
         self.offscreen_canvas = matrix.CreateFrameCanvas()
         self.timezone = None
         self.has_loaded = False
+        self.logger = logging.getLogger(__name__)
 
     async def start(self):
         self.matrix.Clear()
@@ -61,14 +63,14 @@ class ClockMode(AbstractMode):
         await asyncio.sleep(0.1)
 
     async def update_weather_data(self, data):
-        print("Refreshing weather data " + str(data))
+        logging.info("Refreshing weather data " + str(data))
         try:
             path = f"icons/clock/{data['weather']['icon']['raw']}.png"
             with Image.open(path) as img:
                 self.icon = img.copy()
             self.temperature = f"{int(round(data['weather']['temp']['cur']))}°C"
         except Exception as e:
-            print(f"Error in refresh_weather_data: {e}")
+            logging.error(f"Error in refresh_weather_data: {e}")
         self.has_loaded = True
 
     def draw_icon(self, x, y):

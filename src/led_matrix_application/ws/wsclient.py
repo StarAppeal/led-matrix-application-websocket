@@ -3,10 +3,12 @@ import json
 import ssl
 from zoneinfo import ZoneInfo
 import websockets
+import logging
 
 
 class WebsocketClient:
     def __init__(self, url, jwt, led_matrix_controller, on_stop, error_queue):
+
         self.url = url
         self.jwt = jwt
         self.led_matrix_controller = led_matrix_controller
@@ -17,19 +19,21 @@ class WebsocketClient:
         self.reconnect_delay = 5  # Initial reconnect delay in seconds
         self.max_reconnect_delay = 60  # Maximum backoff time
         self.websocket = None
+        self.logger = logging.getLogger(__name__)
 
     async def run(self):
         headers = [("Authorization", f"Bearer {self.jwt}")]
         while self.running:
             try:
-                print("Attempting to connect to WebSocket...")
+                self.logger.info("Attempting to connect to WebSocket...")
+
                 async with websockets.connect(
-                    self.url,
-                    ssl=self._create_ssl_context(),
-                    additional_headers=headers,
-                    ping_interval=45
+                        self.url,
+                        ssl=self._create_ssl_context(),
+                        additional_headers=headers,
+                        ping_interval=45,
                 ) as websocket:
-                    print("WebSocket connection established.")
+                    self.logger.info("WebSocket connection established.")
                     self.websocket = websocket
                     self.reconnect_delay = 5  # Reset reconnect delay on success
 
@@ -38,10 +42,10 @@ class WebsocketClient:
                         self.send_error_messages()
                     )
             except (websockets.ConnectionClosed, asyncio.TimeoutError) as e:
-                print(f"WebSocket connection closed: {e}")
+                self.logger.warning(f"WebSocket connection closed: {e}")
                 await self._handle_reconnect(e)
             except Exception as e:
-                print(f"Unexpected WebSocket error: {e}")
+                self.logger.error(f"Unexpected WebSocket error: {e}", exc_info=True)
                 await self._handle_reconnect(e)
             finally:
                 self.websocket = None
@@ -52,7 +56,7 @@ class WebsocketClient:
             async for message in self.websocket:
                 await self.on_message(message)
         except websockets.ConnectionClosedError as e:
-            print(f"Connection lost while receiving messages: {e}")
+            self.logger.warning(f"Connection lost while receiving messages: {e}")
             raise
 
     async def send_error_messages(self):
@@ -64,15 +68,15 @@ class WebsocketClient:
                 # Use async get with a timeout to avoid indefinite blocking
                 if not self.error_queue.empty():
                     error = await self.error_queue.get()
-                    print(f"Error message received: {error}")
+                    self.logger.debug(f"Error message received: {error}")
                     await self.send_message(error)
-                    print("switching to idle mode")
+                    self.logger.info("switching to idle mode")
                     await self.led_matrix_controller.switch_mode("idle")
                 await asyncio.sleep(0.2)
             except asyncio.TimeoutError:
                 pass  # No error in queue, continue loop
             except Exception as e:
-                print(f"Error while sending error message: {e}")
+                self.logger.error(f"Error while sending error message: {e}")
                 await self.error_queue.put({"type": "ERROR", "message": str(e)})
 
     async def send_message(self, message):
@@ -80,14 +84,14 @@ class WebsocketClient:
             try:
                 await self.websocket.send(json.dumps(message))
             except Exception as e:
-                print(f"Error while sending message: {e}")
+                self.logger.error(f"Error while sending message: {e}")
 
     async def on_message(self, message):
         try:
             json_message = json.loads(message)
-            print(f"Received message: {json_message}")
+            self.logger.info(f"Received message: {json_message}")
         except json.JSONDecodeError as e:
-            print(f"Error decoding JSON: {e}")
+            self.logger.error(f"Error decoding JSON: {e}")
             return
 
         if "type" not in json_message:
@@ -120,12 +124,12 @@ class WebsocketClient:
         self.current_mode = new_mode
 
     async def handle_spotify_update(self, message):
-        print("SPOTIFY_UPDATE")
+        self.logger.debug("SPOTIFY_UPDATE")
         await self.led_matrix_controller.modes["music"].update_song_data(message["payload"])
 
     async def _handle_reconnect(self, error):
         """Reconnect logic with exponential backoff."""
-        print(f"Error: {error}. Reconnecting in {self.reconnect_delay} seconds...")
+        self.logger.warning(f"Error: {error}. Reconnecting in {self.reconnect_delay} seconds...")
         if self.error_queue.qsize() < 5:
             await self.error_queue.put({"type": "ERROR", "message": str(error)})
         await asyncio.sleep(self.reconnect_delay)

@@ -1,16 +1,20 @@
 import asyncio
+import logging
 import os
 from controller import led_matrix_controller
+from src.led_matrix_application.utils import setup_logging
 from ws.wsclient import WebsocketClient
 
 async def main():
-    print("Starting LED Matrix Application")
+    setup_logging()
+
+    logging.info("Starting LED Matrix Application")
 
     wsclient = WebsocketClient(
         url=os.getenv("WEBSOCKET_URL"),
         jwt=os.getenv("JWT_TOKEN"),
         led_matrix_controller=led_matrix_controller,
-        on_stop=lambda: print("Stopped"),
+        on_stop=lambda: logging.info("Stopped"),
         error_queue=led_matrix_controller.error_queue,
     )
 
