@@ -89,7 +89,12 @@ class WebsocketClient:
     async def on_message(self, message):
         try:
             json_message = json.loads(message)
-            self.logger.info(f"Received message: {json_message}")
+
+            sanitized_message = self.sanitize_specific_key(json_message, ["image", "image"], max_length=100)
+
+            formatted_message = json.dumps(sanitized_message, indent=4, ensure_ascii=False)
+
+            self.logger.info(f"Received message: {formatted_message}")
         except json.JSONDecodeError as e:
             self.logger.error(f"Error decoding JSON: {e}")
             return
@@ -141,3 +146,18 @@ class WebsocketClient:
         ssl_context.check_hostname = False
         ssl_context.verify_mode = ssl.CERT_NONE
         return ssl_context
+
+    def sanitize_specific_key(self, data, key_path, max_length=100):
+        """Kürzt nur den spezifischen Schlüssel in einem JSON-Objekt und gibt das JSON zurück."""
+        current = data
+        try:
+            for key in key_path[:-1]:
+                current = current[key]
+
+            if isinstance(current[key_path[-1]], str) and len(current[key_path[-1]]) > max_length:
+                current[key_path[-1]] = f"{current[key_path[-1]][:max_length]}... [truncated]"
+        except (KeyError, TypeError):
+            pass
+
+        return data
+
