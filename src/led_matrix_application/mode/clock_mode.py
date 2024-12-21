@@ -63,14 +63,15 @@ class ClockMode(AbstractMode):
         await asyncio.sleep(0.1)
 
     async def update_weather_data(self, data):
-        logging.info("Refreshing weather data " + str(data))
+        self.logger.info("Refreshing weather data: ")
+        self.logger.info(data)
         try:
             path = f"icons/clock/{data['weather']['icon']['raw']}.png"
             with Image.open(path) as img:
                 self.icon = img.copy()
             self.temperature = f"{int(round(data['weather']['temp']['cur']))}°C"
         except Exception as e:
-            logging.error(f"Error in refresh_weather_data: {e}")
+            self.logger.error(f"Error in refresh_weather_data: {e}")
         self.has_loaded = True
 
     def draw_icon(self, x, y):
