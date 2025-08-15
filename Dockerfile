@@ -49,3 +49,15 @@ WORKDIR /app
 RUN apt-get update && apt-get install -o Acquire::Retries=5 -y --no-install-recommends \
     libtiff5 \
     libopenjp2
+
+# Kopiere nur die minimal notwendigen Dateien aus der Build-Stage
+COPY --from=builder /app/led_matrix_application .
+COPY --from=builder /usr/local/lib/python3.9 /usr/local/lib/python3.9
+
+# Setze ENV für OpenSSL
+ENV OPENSSL_DIR="/usr"
+ENV OPENSSL_LIB_DIR="/usr/lib/arm-linux-gnueabihf"
+ENV OPENSSL_INCLUDE_DIR="/usr/include"
+
+# Startbefehl für den Container
+CMD ["python3", "main.py"]
