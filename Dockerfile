@@ -2,9 +2,14 @@
 # change it like that: copy only requirements.txt, and copy later the led_matrix_application folder from host
 FROM --platform=linux/arm/v6 balenalib/raspberry-pi-python:3.11-bullseye AS builder
 
+
+# Laufzeit-Umgebungsvariablen setzen -> numpy kompiliert schneller
+ENV NPY_BLAS_ORDER=none
+ENV NPY_LAPACK_ORDER=none
+
+
 # Arbeitsverzeichnis
 WORKDIR /app
-
 # Systempakete installieren
 RUN apt-get update && apt-get install -o Acquire::Retries=5 -o Acquire::http::Timeout="60" -y --no-install-recommends \
     build-essential \
