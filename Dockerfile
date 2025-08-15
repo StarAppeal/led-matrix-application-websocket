@@ -1,39 +1,35 @@
 # --- Stage 1: Build-Abhängigkeiten und Kompilation ---
+# change it like that: copy only requirements.txt, and copy later the led_matrix_application folder from host
 FROM --platform=linux/arm/v6 balenalib/raspberry-pi-python:3.11-bullseye AS builder
 
+# Arbeitsverzeichnis
 WORKDIR /app
 
-# Erst nur pip und Python-Tools, damit Wheels genutzt werden
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3-pip \
-    curl \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3
-
-# requirements.txt installieren (numpy wird jetzt aus Wheel gezogen)
-COPY src/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt && rm requirements.txt
-
-# Jetzt Build-Tools für native Module installieren
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Systempakete installieren
+RUN apt-get update && apt-get install -o Acquire::Retries=5 -o Acquire::http::Timeout="60" -y --no-install-recommends \
     build-essential \
     make \
     git \
     python3-dev \
     pkg-config \
     libssl-dev \
+    python3-pip \
+    curl \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Rest der App kopieren
+# Aktualisiere Pip und installiere Cython
+RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3
+RUN python3 -m pip install --no-cache-dir "Cython>=0.29.30" && \
+    ln -s $(command -v cython) /usr/bin/cython3
+
+COPY src/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+RUN rm requirements.txt
+
+# Kopiere die Anwendung
 COPY src/led_matrix_application /app/led_matrix_application
 
-# rpi-rgb-led-matrix bauen
-RUN git clone --depth 1 https://github.com/hzeller/rpi-rgb-led-matrix.git && \
-    cd rpi-rgb-led-matrix/bindings/python && \
-    make build-python && \
-    mkdir "/app/led_matrix_application/rgbmatrix" && \
-    cp -r rgbmatrix/* /app/led_matrix_application/rgbmatrix
+# RPI-RGB-LED-Matrix bauen
 RUN git clone --depth 1 https://github.com/hzeller/rpi-rgb-led-matrix.git && \
     cd rpi-rgb-led-matrix/bindings/python && \
     make build-python && \
