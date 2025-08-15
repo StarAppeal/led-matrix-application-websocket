@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from datetime import date, datetime
+
 from mode.abstract_mode import AbstractMode
 from PIL import Image
 from utils import get_rgb_matrix
@@ -12,25 +13,27 @@ class ClockMode(AbstractMode):
         super().__init__(matrix)
         self.offscreen_canvas = None
         self.icon = None
-        self.temperature = None
+        self.temperature = ""
         self.font = graphics.Font()
         self.font.LoadFont("fonts/clock.bdf")
         self.offscreen_canvas = matrix.CreateFrameCanvas()
         self.timezone = None
         self.has_loaded = False
         self.logger = logging.getLogger(__name__)
+        self.settings = None
 
     async def start(self):
-        self.matrix.Clear()
+        self.offscreen_canvas.Clear()
+        self.offscreen_canvas = self.matrix.SwapOnVSync(self.offscreen_canvas)
 
     async def stop(self):
         self.has_loaded = False
 
-    async def update_settings(self, settings):
-        self.settings = settings
+    async def update_settings(self, _settings):
+        self.settings = _settings
 
     async def update_display(self):
-        if self.has_loaded is False:
+        if not self.has_loaded:
             return
         self.offscreen_canvas.Clear()
         display_color = graphics.Color(*self.settings["color"])
@@ -75,6 +78,8 @@ class ClockMode(AbstractMode):
         self.has_loaded = True
 
     def draw_icon(self, x, y):
+        if self.icon is None:
+            return
         width = self.icon.size[0]
         color = tuple(self.settings["color"])
         for index, pixel in enumerate(self.icon.getdata()):

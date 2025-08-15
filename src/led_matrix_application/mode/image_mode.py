@@ -15,13 +15,13 @@ class ImageMode(AbstractMode):
         self.offset = (0, 0)
 
     async def start(self):
-        self.matrix.Clear()
+        self.offscreen_canvas.Clear()
+        self.offscreen_canvas = self.matrix.SwapOnVSync(self.offscreen_canvas)
 
     async def stop(self):
         pass
 
     async def update_settings(self, settings):
-        self.matrix.Clear()
         self.offscreen_canvas.Clear()
 
         image_data = re.sub('^data:image/.+;base64,', '', settings['image'])

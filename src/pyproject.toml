@@ -5,13 +5,6 @@ description = ""
 authors = ["tsomic <keller.nils99@gmail.com>"]
 readme = "README.md"
 
-[tool.taskipy.tasks]
-start = "bash scripts/start.sh"
-dev = "bash scripts/dev.sh"
-start_windows = "pwsh scripts/start.ps1"
-dev_windows = "pwsh scripts/dev.ps1"
-generate_spotify_cache = "bash scripts/generate_spotify_cache.sh"
-
 [tool.poetry.dependencies]
 python = "^3.9"
 pyowm = "^3.3.0"
@@ -22,10 +15,6 @@ setuptools = "^70.0.0"
 tzdata = "^2024.2"
 rgbmatrixemulator = "^0.11.4"
 websockets = "^14.1"
-
-[tool.poetry.group.dev.dependencies]
-taskipy = "^1.12.2"
-watchdog = {extras = ["watchmedo"], version = "^4.0.0"}
 
 [build-system]
 requires = ["poetry-core"]
