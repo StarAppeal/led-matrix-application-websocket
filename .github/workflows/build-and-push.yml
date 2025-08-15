@@ -84,7 +84,7 @@ jobs:
           
       - name: Move wheels into build context
         run: |
-          cp wheels/*.whl 
+          cp wheels/*.whl ./
 
       - name: Build and Push Docker Image
         run: |
