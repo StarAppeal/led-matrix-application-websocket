@@ -1,6 +1,6 @@
 # --- Stage 1: Build-Abhängigkeiten und Kompilation ---
 # change it like that: copy only requirements.txt, and copy later the led_matrix_application folder from host
-FROM --platform=linux/arm/v6 balenalib/raspberry-pi-python:3.9-bullseye AS builder
+FROM --platform=linux/arm/v6 balenalib/raspberry-pi-python:3.11-bullseye AS builder
 
 # Arbeitsverzeichnis
 WORKDIR /app
