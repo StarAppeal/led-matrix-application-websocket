@@ -45,10 +45,14 @@ FROM --platform=linux/arm/v6 balenalib/raspberry-pi-python:3.9-bullseye-run
 
 WORKDIR /app
 
-# Installiere fehlende Runtime-Abhängigkeiten
 RUN apt-get update && apt-get install -o Acquire::Retries=5 -y --no-install-recommends \
     libtiff5 \
-    libopenjp2
+    libopenjp2-7 \
+    libxcb1 \
+    libxcb-render0 \
+    libxcb-shm0 \
+    libopenblas0 \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Kopiere nur die minimal notwendigen Dateien aus der Build-Stage
 COPY --from=builder /app/led_matrix_application .
