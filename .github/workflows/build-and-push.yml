@@ -7,6 +7,8 @@ on:
   workflow_dispatch:
 
 env:
+  PY_VER: "3.9"
+  PILLOW_VERSION: "10.3.0"
   CACHE_KEY: "pillow-10.3.0-py3.9-armv6-v10.3.0"
 
 jobs:
@@ -36,17 +38,6 @@ jobs:
         if: steps.cache-restore.outputs.cache-hit != 'true'
         run: |
           mkdir -p wheels
-          cat > Dockerfile.pillow-wheel <<'EOF'
-          FROM --platform=linux/arm/v6 balenalib/raspberry-pi-python:${PY_VER}-bullseye
-          ARG PILLOW_VERSION
-          RUN apt-get update && apt-get install -y --no-install-recommends \
-              build-essential python3-dev \
-              libjpeg-dev zlib1g-dev libtiff5-dev libwebp-dev libopenjp2-7-dev libfreetype6-dev \
-            && apt-get clean && rm -rf /var/lib/apt/lists/*
-          RUN python3 -m pip install --upgrade pip wheel setuptools
-          RUN mkdir -p /out
-          RUN python3 -m pip wheel --no-binary :all: -w /out pillow==${PILLOW_VERSION}
-          EOF
           docker buildx build \
             --platform linux/arm/v6 \
             -f Dockerfile.pillow-wheel \
