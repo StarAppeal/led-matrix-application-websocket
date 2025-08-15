@@ -1,8 +1,6 @@
 # --- Stage 1: Build-Abhängigkeiten und Kompilation ---
-FROM --platform=linux/arm/v6 balenalib/raspberry-pi-python:3.9-bullseye AS builder
-
-ENV NPY_BLAS_ORDER=none
-ENV NPY_LAPACK_ORDER=none
+FROM balenalib/raspberry-pi-python:3.9-bullseye AS builder
+# ^ Tipp: KEIN --platform im Dockerfile erzwingen. Buildx setzt das pro Zielarchitektur.
 
 WORKDIR /app
 
@@ -14,37 +12,42 @@ RUN apt-get update && apt-get install -o Acquire::Retries=5 -o Acquire::http::Ti
 RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3
 RUN python3 -m pip install --no-cache-dir "Cython>=0.29.30" && ln -s $(command -v cython) /usr/bin/cython3
 
-# >>> Hier: VOR requirements das ARMv6-Pillow-Wheel installieren
-#    wheels/ liegt im Build Context (Repo-Root) durch den Workflow
+# --- Wichtig: Das vorbereitete Wheel in den Container holen ---
+# Damit COPY funktioniert, erzeugen wir im Workflow IMMER einen 'wheels'-Ordner.
 COPY wheels/ /tmp/wheels/
-RUN ls -l /tmp/wheels && python3 -m pip install --no-cache-dir /tmp/wheels/Pillow-*.whl
 
-# Jetzt erst requirements installieren (Pillow ist bereits satisfied)
+# Installiere Pillow NUR aus dem lokalen Wheel. Falls keins da: fail hart und sichtbar.
+RUN set -eux; \
+    if ls /tmp/wheels/Pillow-*.whl >/dev/null 2>&1; then \
+        python3 -m pip install --no-cache-dir /tmp/wheels/Pillow-*.whl; \
+    else \
+        echo "ERROR: Kein lokales Pillow-Wheel gefunden (wheels/Pillow-*.whl). Abbruch."; \
+        exit 42; \
+    fi
+
+# Jetzt erst die restlichen Requirements
 COPY src/requirements.txt .
 RUN python3 -m pip install --no-cache-dir -r requirements.txt && rm requirements.txt
 
-# App kopieren
+# App rein
 COPY src/led_matrix_application /app/led_matrix_application
 
-# RPI-RGB-LED-Matrix bauen
+# RGB-LED-Matrix bauen
 RUN git clone --depth 1 https://github.com/hzeller/rpi-rgb-led-matrix.git && \
     cd rpi-rgb-led-matrix/bindings/python && \
     make build-python && \
     mkdir -p "/app/led_matrix_application/rgbmatrix" && \
     cp -r rgbmatrix/* /app/led_matrix_application/rgbmatrix
 
-# --- Stage 2: Finales schlankes Image ---
-FROM --platform=linux/arm/v6 balenalib/raspberry-pi-python:3.9-bullseye-run
-
+# --- Stage 2: Runtime-Image ---
+FROM balenalib/raspberry-pi-python:3.9-bullseye-run
 WORKDIR /app
 
-# Runtime-Libs für Pillow (damit das Wheel sauber lädt)
 RUN apt-get update && apt-get install -o Acquire::Retries=5 -y --no-install-recommends \
     libjpeg62-turbo libtiff5 libopenjp2-7 libfreetype6 \
     libxcb1 libxcb-render0 libxcb-shm0 libopenblas0 \
  && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Nur das Nötigste aus der Build-Stage
 COPY --from=builder /app/led_matrix_application .
 COPY --from=builder /usr/local/lib/python3.9 /usr/local/lib/python3.9
 
