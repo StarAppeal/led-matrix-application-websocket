@@ -28,6 +28,7 @@ jobs:
 
       - name: Export requirements.txt
         run: |
+           cd src/
            poetry export -f requirements.txt --output requirements.txt --without-hashes
 
       - name: Set up QEMU
