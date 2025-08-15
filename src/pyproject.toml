@@ -6,7 +6,7 @@ authors = ["tsomic <keller.nils99@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.11"
 pyowm = "^3.3.0"
 python-dotenv = "^1.0.1"
 pillow = "^10.3.0"
@@ -15,7 +15,11 @@ setuptools = "^70.0.0"
 tzdata = "^2024.2"
 rgbmatrixemulator = "^0.11.4"
 websockets = "^14.1"
+numpy = "^2.3.2"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.requires-plugins]
+poetry-plugin-export = ">=1.8"

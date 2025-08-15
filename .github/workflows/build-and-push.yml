@@ -24,11 +24,11 @@ jobs:
 
       - name: Install Poetry
         run: |
-          pip install poetry==1.8.5
+          pip install poetry-plugin-export
 
       - name: Export requirements.txt
         run: |
-          poetry export -f requirements.txt --output src/requirements.txt --without-hashes -C src
+           poetry export -f requirements.txt --output requirements.txt --without-hashes
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -39,7 +39,6 @@ jobs:
       - name: Log in to GitHub Container Registry
         run: |
           echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-      
 
       - name: Build and Push Docker Image
         run: |
