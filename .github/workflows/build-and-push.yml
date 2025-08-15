@@ -9,7 +9,7 @@ on:
 env:
   PY_VER: "3.9"
   PILLOW_VERSION: "10.3.0"
-  CACHE_KEY: "pillow-${{ runner.os }}-py${{ env.PY_VER }}-armv6-v${{ env.PILLOW_VERSION }}"
+  CACHE_KEY: "pillow-10.3.0-py${{ env.PY_VER }}-armv6-v${{ env.PILLOW_VERSION }}"
 
 jobs:
   # Job 1: Pillow-Wheel ARMv6 bauen, aber nur wenn NICHT im Cache
