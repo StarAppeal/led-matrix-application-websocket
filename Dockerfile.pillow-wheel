@@ -1,0 +1,14 @@
+# Baut EIN ARMv6-Pillow-Wheel und legt es in /out ab
+FROM --platform=linux/arm/v6 balenalib/raspberry-pi-python:3.9-bullseye
+
+ARG PILLOW_VERSION=10.3.0
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential python3-dev \
+    libjpeg-dev zlib1g-dev libtiff5-dev libwebp-dev libopenjp2-7-dev libfreetype6-dev \
+ && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN python3 -m pip install --upgrade pip wheel setuptools
+RUN mkdir -p /out
+# wichtig: Wheel in /out ablegen -> wird von buildx nach ./wheels/ geschrieben
+RUN python3 -m pip wheel --no-binary :all: -w /out pillow==${PILLOW_VERSION}

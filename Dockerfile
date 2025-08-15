@@ -1,43 +1,36 @@
 # --- Stage 1: Build-Abhängigkeiten und Kompilation ---
 FROM --platform=linux/arm/v6 balenalib/raspberry-pi-python:3.9-bullseye AS builder
 
-# Arbeitsverzeichnis
+ENV NPY_BLAS_ORDER=none
+ENV NPY_LAPACK_ORDER=none
+
 WORKDIR /app
 
-# Systempakete installieren
 RUN apt-get update && apt-get install -o Acquire::Retries=5 -o Acquire::http::Timeout="60" -y --no-install-recommends \
-    build-essential \
-    make \
-    git \
-    python3-dev \
-    pkg-config \
-    libssl-dev \
-    python3-pip \
-    curl \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    build-essential make git python3-dev pkg-config libssl-dev python3-pip curl \
+ && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Aktualisiere Pip und installiere Cython
+# Frisches pip + Cython
 RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3
-RUN python3 -m pip install --no-cache-dir "Cython>=0.29.30" && \
-    ln -s $(command -v cython) /usr/bin/cython3
+RUN python3 -m pip install --no-cache-dir "Cython>=0.29.30" && ln -s $(command -v cython) /usr/bin/cython3
 
-# --- Pillow-Wheel einfügen ---
-# Falls du im GitHub Actions Job Pillow lokal gebaut hast, kopiere die Wheel-Datei hierher
-COPY ./wheels/Pillow-*.whl ./Pillow.whl
+# >>> Hier: VOR requirements das ARMv6-Pillow-Wheel installieren
+#    wheels/ liegt im Build Context (Repo-Root) durch den Workflow
+COPY wheels/ /tmp/wheels/
+RUN ls -l /tmp/wheels && python3 -m pip install --no-cache-dir /tmp/wheels/Pillow-*.whl
 
-# Nur requirements.txt kopieren und installieren
+# Jetzt erst requirements installieren (Pillow ist bereits satisfied)
 COPY src/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-RUN rm requirements.txt
+RUN python3 -m pip install --no-cache-dir -r requirements.txt && rm requirements.txt
 
-# Anwendung kopieren
+# App kopieren
 COPY src/led_matrix_application /app/led_matrix_application
 
 # RPI-RGB-LED-Matrix bauen
 RUN git clone --depth 1 https://github.com/hzeller/rpi-rgb-led-matrix.git && \
     cd rpi-rgb-led-matrix/bindings/python && \
     make build-python && \
-    mkdir "/app/led_matrix_application/rgbmatrix" && \
+    mkdir -p "/app/led_matrix_application/rgbmatrix" && \
     cp -r rgbmatrix/* /app/led_matrix_application/rgbmatrix
 
 # --- Stage 2: Finales schlankes Image ---
@@ -45,23 +38,18 @@ FROM --platform=linux/arm/v6 balenalib/raspberry-pi-python:3.9-bullseye-run
 
 WORKDIR /app
 
+# Runtime-Libs für Pillow (damit das Wheel sauber lädt)
 RUN apt-get update && apt-get install -o Acquire::Retries=5 -y --no-install-recommends \
-    libtiff5 \
-    libopenjp2-7 \
-    libxcb1 \
-    libxcb-render0 \
-    libxcb-shm0 \
-    libopenblas0 \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    libjpeg62-turbo libtiff5 libopenjp2-7 libfreetype6 \
+    libxcb1 libxcb-render0 libxcb-shm0 libopenblas0 \
+ && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Kopiere nur die minimal notwendigen Dateien aus der Build-Stage
+# Nur das Nötigste aus der Build-Stage
 COPY --from=builder /app/led_matrix_application .
 COPY --from=builder /usr/local/lib/python3.9 /usr/local/lib/python3.9
 
-# Setze ENV für OpenSSL
 ENV OPENSSL_DIR="/usr"
 ENV OPENSSL_LIB_DIR="/usr/lib/arm-linux-gnueabihf"
 ENV OPENSSL_INCLUDE_DIR="/usr/include"
 
-# Startbefehl für den Container
 CMD ["python3", "main.py"]

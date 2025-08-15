@@ -7,43 +7,42 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Job 1: ARMv6-Pillow-Wheel bauen und als Artifact + in Workspace legen
   build-pillow:
     runs-on: ubuntu-latest
-
-    outputs:
-      wheels-path: ${{ steps.upload-wheels.outputs.artifact-path }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.9
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
-      - name: Install build tools
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build ARMv6 Pillow wheel (to ./wheels)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential libjpeg-dev zlib1g-dev
+          # schreibt die Datei(en) direkt in den lokalen Ordner ./wheels/
+          docker buildx build \
+            --platform linux/arm/v6 \
+            -f Dockerfile.pillow-wheel \
+            --build-arg PILLOW_VERSION=10.3.0 \
+            --output type=local,dest=./wheels \
+            .
 
-      - name: Install pip tools
-        run: pip install pip wheel setuptools
+      - name: List wheels (debug)
+        run: ls -l wheels
 
-      - name: Build Pillow wheel for ARMv6
-        run: |
-          mkdir -p wheels
-          pip wheel --no-binary :all: --wheel-dir wheels pillow==10.3.0
-
-      - name: Upload Pillow wheel
+      - name: Upload wheels artifact (v4)
         uses: actions/upload-artifact@v4
         with:
-          name: pillow-wheel
+          name: pillow-wheels
           path: wheels/
 
+  # Job 2: Multi-Arch Image bauen und pushen
   build-and-push:
     runs-on: ubuntu-latest
-    needs: build-pillow   # <- wartet auf Pillow
+    needs: build-pillow
 
     permissions:
       contents: write
@@ -53,11 +52,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download Pillow wheel
+      # Falls Job auf anderem Runner läuft: Artifact wiederherstellen
+      - name: Download wheels artifact (v4)
         uses: actions/download-artifact@v4
         with:
-          name: pillow-wheel
+          name: pillow-wheels
           path: wheels
+
+      - name: Verify wheels in build context
+        run: ls -l wheels
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -69,8 +72,8 @@ jobs:
 
       - name: Export requirements.txt
         run: |
-           cd src/
-           poetry export -f requirements.txt --output requirements.txt --without-hashes
+          cd src
+          poetry export -f requirements.txt --output requirements.txt --without-hashes
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -79,27 +82,18 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to GitHub Container Registry
-        run: |
-          echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-          
-      - name: Move wheels into build context
-        run: |
-          cp wheels/*.whl ./
+        run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
       - name: Build and Push Docker Image
         run: |
           VERSION="${{ github.ref_name }}"
           IMAGE_NAME="led-matrix-application-websocket"
-          REPOSITORY_OWNER_LOWERCASE=$(echo "${{ github.actor }}" | tr '[:upper:]' '[:lower:]')
-          IMAGE_TAG_LATEST="latest"
-          IMAGE_TAG_VERSION="${VERSION}"
-          
-          echo "🚀 Building the image with tags: ${IMAGE_TAG_LATEST} and ${IMAGE_TAG_VERSION}"
+          OWNER_LC=$(echo "${{ github.actor }}" | tr '[:upper:]' '[:lower:]')
+
           docker buildx create --use
-          docker buildx build --platform linux/amd64,linux/arm/v6,linux/arm/v7 \
-            -t ghcr.io/${REPOSITORY_OWNER_LOWERCASE}/${IMAGE_NAME}:${IMAGE_TAG_LATEST} \
-            -t ghcr.io/${REPOSITORY_OWNER_LOWERCASE}/${IMAGE_NAME}:${IMAGE_TAG_VERSION} \
-            --build-arg PILLOW_WHEEL=./wheels/Pillow-*.whl \
+          docker buildx build --platform linux/amd64,linux/arm/v7,linux/arm/v6 \
+            -t ghcr.io/${OWNER_LC}/${IMAGE_NAME}:latest \
+            -t ghcr.io/${OWNER_LC}/${IMAGE_NAME}:${VERSION} \
             --push .
 
       - name: Clean up
