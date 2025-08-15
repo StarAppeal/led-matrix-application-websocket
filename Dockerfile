@@ -1,6 +1,6 @@
 # --- Stage 1: Build-Abhängigkeiten und Kompilation ---
 # change it like that: copy only requirements.txt, and copy later the led_matrix_application folder from host
-FROM --platform=linux/arm/v6 balenalib/raspberry-pi-python:3.11-bullseye AS builder
+FROM --platform=linux/arm/v6 balenalib/raspberry-pi-python:3.9-bullseye AS builder
 
 
 # Laufzeit-Umgebungsvariablen setzen -> numpy kompiliert schneller
@@ -42,7 +42,7 @@ RUN git clone --depth 1 https://github.com/hzeller/rpi-rgb-led-matrix.git && \
     cp -r rgbmatrix/* /app/led_matrix_application/rgbmatrix
 
 # --- Stage 2: Finales schlankes Image (use buster later?)---
-FROM --platform=linux/arm/v6 balenalib/raspberry-pi-python:3.11-bullseye-run
+FROM --platform=linux/arm/v6 balenalib/raspberry-pi-python:3.9-bullseye-run
 
 # Arbeitsverzeichnis
 WORKDIR /app
@@ -59,7 +59,7 @@ RUN apt-get update && apt-get install -o Acquire::Retries=5 -y --no-install-reco
 
 # Kopiere nur die minimal notwendigen Dateien aus der Build-Stage
 COPY --from=builder /app/led_matrix_application .
-COPY --from=builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
+COPY --from=builder /usr/local/lib/python3.9 /usr/local/lib/python3.9
 
 # Setze ENV für OpenSSL
 ENV OPENSSL_DIR="/usr"

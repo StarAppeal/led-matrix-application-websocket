@@ -6,7 +6,7 @@ authors = ["tsomic <keller.nils99@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.9"
 pyowm = "^3.3.0"
 python-dotenv = "^1.0.1"
 pillow = "^10.3.0"
