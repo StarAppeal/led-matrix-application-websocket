@@ -55,13 +55,6 @@ jobs:
       - name: List wheels (debug)
         run: ls -l wheels || true
 
-      # Artifact, damit Job 2 (anderer Runner) es sicher bekommt
-      - name: Upload wheels
-        uses: actions/upload-artifact@v4
-        with:
-          name: pillow-wheels
-          path: wheels/*.whl
-
   # Job 2: Multi-arch Docker bauen & pushen, nutzt das Wheel-Artifact
   build-and-push:
     runs-on: ubuntu-latest
@@ -75,11 +68,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download wheels artifact
-        uses: actions/download-artifact@v4
+      - name: Restore wheels cache
+        uses: actions/cache/restore@v4
         with:
-          name: pillow-wheels
           path: wheels
+          key: ${{ env.CACHE_KEY }}
 
       - name: Verify wheels in build context
         run: ls -l wheels
