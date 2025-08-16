@@ -47,7 +47,7 @@ jobs:
             --platform linux/arm/v6 \
             -f Dockerfile.pillow-wheel \
             --build-arg PILLOW_VERSION="${PILLOW_VERSION}" \
-            --output type=local,dest=./wheels,out=/out \
+            --output type=local,dest=./wheels \
             .
 
       - name: Save wheels cache
