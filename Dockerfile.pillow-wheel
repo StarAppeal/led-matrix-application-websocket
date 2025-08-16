@@ -12,3 +12,5 @@ RUN python3 -m pip install --upgrade pip wheel setuptools
 RUN mkdir -p /out
 # wichtig: Wheel in /out ablegen -> wird von buildx nach ./wheels/ geschrieben
 RUN python3 -m pip wheel --no-binary :all: -w /out pillow==${PILLOW_VERSION}
+
+RUN mkdir -p /out && cp /app/wheels/*.whl /out/

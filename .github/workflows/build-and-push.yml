@@ -26,6 +26,11 @@ jobs:
           path: wheels
           key: ${{ env.CACHE_KEY }}
 
+      - name: Debug Cache Output
+        run: |
+          echo "Cache Hit? -> ${{ steps.cache-restore.outputs.cache-hit }}"
+          ls -l wheels || echo "Kein wheels Ordner gefunden"
+
       - name: Set up QEMU
         if: steps.cache-restore.outputs.cache-hit != 'true'
         uses: docker/setup-qemu-action@v3
@@ -42,7 +47,7 @@ jobs:
             --platform linux/arm/v6 \
             -f Dockerfile.pillow-wheel \
             --build-arg PILLOW_VERSION="${PILLOW_VERSION}" \
-            --output type=local,dest=./wheels \
+            --output type=local,dest=./wheels,out=/out \
             .
 
       - name: Save wheels cache
@@ -73,6 +78,11 @@ jobs:
         with:
           path: wheels
           key: ${{ env.CACHE_KEY }}
+
+      - name: Debug Cache Output
+        run: |
+          echo "Cache Hit? -> ${{ steps.cache-restore.outputs.cache-hit }}"
+          ls -l wheels || echo "Kein wheels Ordner gefunden"
 
       - name: Verify wheels in build context
         run: ls -l wheels
