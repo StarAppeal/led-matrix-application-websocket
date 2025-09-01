@@ -12,7 +12,7 @@ RGBMatrix = get_rgb_matrix().get("RGBMatrix")
 RGBMatrixOptions = get_rgb_matrix().get("RGBMatrixOptions")
 
 class LEDMatrixController:
-    def __init__(self, error_queue, target_fps=120):
+    def __init__(self, error_queue, target_fps=60):
         self.error_queue = error_queue
         options = RGBMatrixOptions()
         options.rows = 64
