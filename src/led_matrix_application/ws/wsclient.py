@@ -5,9 +5,6 @@ from zoneinfo import ZoneInfo
 import websockets
 import logging
 
-from requests_toolbelt.adapters.x509 import create_ssl_context
-
-
 class WebsocketClient:
     def __init__(self, url, jwt, led_matrix_controller, on_stop, error_queue):
 
@@ -39,6 +36,7 @@ class WebsocketClient:
                         ssl=_ssl,
                         extra_headers=headers,
                         ping_interval=45,
+                        max_size=2**24,
                 ) as websocket:
                     self.logger.info("WebSocket connection established.")
                     self.websocket = websocket
