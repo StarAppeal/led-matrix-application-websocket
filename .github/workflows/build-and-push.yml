@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
 
 env:
-  PY_VER: "3.9"
+  PY_VER: "3.11"
   PILLOW_VERSION: "10.3.0"
-  CACHE_KEY: "pillow-10.3.0-py3.9-armv6-v10.3.0-v4"
+  CACHE_KEY: "pillow-10.3.0-py3.11-armv6-v10.3.0-v4"
 
 jobs:
   # Job 1: Pillow-Wheel ARMv6 bauen
