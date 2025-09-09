@@ -91,6 +91,27 @@ jobs:
           name: pillow-wheels
           path: wheels/
 
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PY_VER }}
+
+      - name: Install Poetry
+        run: pip install poetry poetry-plugin-export
+
+      - name: Export requirements.txt from poetry
+        run: poetry export -f requirements.txt --output requirements.txt --without-hashes
+        working-directory: ./src
+
+      - name: Verify requirements.txt exists before build
+        run: |
+          echo "Verifying that src/requirements.txt was created..."
+          ls -l src/requirements.txt
+          if [ ! -f src/requirements.txt ]; then
+            echo "::error::src/requirements.txt was NOT created by poetry export!"
+            exit 1
+          fi
+
       - name: Set repository owner to lowercase
         id: string-actions
         run: echo "OWNER_LC=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
