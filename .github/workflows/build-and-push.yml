@@ -78,28 +78,21 @@ jobs:
     needs: build-pillow # Wartet auf den Abschluss von build-pillow
 
     permissions:
-      contents: write
-      packages: write
+      contents: read # Leserechte für Checkout
+      packages: write # Schreibrechte für GHCR
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Download wheel artifact
-        # Lade das Artefakt aus dem vorherigen Job herunter
         uses: actions/download-artifact@v4
         with:
           name: pillow-wheels
           path: wheels/ # Entpacke es direkt in den Ordner ./wheels
 
       - name: Verify wheels in build context
-        run: |
-          echo "Checking for wheels directory..."
-          ls -l wheels
-          if [ ! -f wheels/pillow-*.whl ]; then
-            echo "ERROR: pillow wheel not found after download!"
-            exit 1
-          fi
+        run: ls -lR wheels
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -127,12 +120,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build & Push
+      - name: Build and Push Docker image
+        id: build-and-push
         uses: docker/build-push-action@v5
         with:
           context: .
           platforms: linux/amd64,linux/arm/v7,linux/arm/v6
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/led-matrix-application-websocket:latest
-            ghcr.io/${{ github.repository_owner }}/led-matrix-application-websocket:${{ github.ref_name }}
+            ghcr.io/${{ github.repository_owner | tolower }}/led-matrix-application-websocket:latest
+            ghcr.io/${{ github.repository_owner | tolower }}/led-matrix-application-websocket:${{ github.ref_name }}
