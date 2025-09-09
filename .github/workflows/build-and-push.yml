@@ -100,7 +100,7 @@ jobs:
         run: pip install poetry poetry-plugin-export
 
       - name: Export requirements.txt from poetry
-        run: poetry export -f requirements.txt --output requirements.txt --without-hashes
+        run: poetry export -f requirements.txt --output requirements.txt --without-hashes --without dev
         working-directory: ./src
 
       - name: Verify requirements.txt exists before build

@@ -6,7 +6,7 @@ version = "2.2.0"
 description = "BDF (Glyph Bitmap Distribution Format) Bitmap Font File Parser in Python"
 optional = false
 python-versions = ">=3.5"
-groups = ["main"]
+groups = ["dev"]
 files = [
     {file = "bdfparser-2.2.0-py3-none-any.whl", hash = "sha256:62ceed3b90b1fca050fcb414e70cc5b1f4551d57b088f9e7417678563eebf135"},
     {file = "bdfparser-2.2.0.tar.gz", hash = "sha256:75cebd7c2f1ed5e5d0985763b255726a9538c602c7c5ca8639707aec54a58683"},
@@ -149,7 +149,7 @@ version = "0.5.0"
 description = "libsixel binding for Python"
 optional = false
 python-versions = "*"
-groups = ["main"]
+groups = ["dev"]
 files = [
     {file = "libsixel-python-0.5.0.tar.gz", hash = "sha256:030666378be9c42f9843ab3f0715c7819f54e4e4fb81cbb845dee269ca3013f0"},
 ]
@@ -160,7 +160,7 @@ version = "2.0.2"
 description = "Fundamental package for array computing in Python"
 optional = false
 python-versions = ">=3.9"
-groups = ["main"]
+groups = ["dev"]
 files = [
     {file = "numpy-2.0.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:51129a29dbe56f9ca83438b706e2e69a39892b5eda6cedcb6b0c9fdc9b0d3ece"},
     {file = "numpy-2.0.2-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:f15975dfec0cf2239224d80e32c3170b1d168335eaedee69da84fbe9f1f9cd04"},
@@ -215,7 +215,7 @@ version = "10.3.0"
 description = "Python Imaging Library (Fork)"
 optional = false
 python-versions = ">=3.8"
-groups = ["main"]
+groups = ["main", "dev"]
 files = [
     {file = "pillow-10.3.0-cp310-cp310-macosx_10_10_x86_64.whl", hash = "sha256:90b9e29824800e90c84e4022dd5cc16eb2d9605ee13f05d47641eb183cd73d45"},
     {file = "pillow-10.3.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:a2c405445c79c3f5a124573a051062300936b0281fee57637e706453e452746c"},
@@ -302,7 +302,7 @@ version = "2.6.1"
 description = "Python Game Development"
 optional = false
 python-versions = ">=3.6"
-groups = ["main"]
+groups = ["dev"]
 files = [
     {file = "pygame-2.6.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:9beeb647e555afb5657111fa83acb74b99ad88761108eaea66472e8b8547b55b"},
     {file = "pygame-2.6.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:10e3d2a55f001f6c0a6eb44aa79ea7607091c9352b946692acedb2ac1482f1c9"},
@@ -458,7 +458,7 @@ version = "0.11.6"
 description = "A PC emulator for Raspberry Pi LED matrices driven by rpi-rgb-led-matrix"
 optional = false
 python-versions = "*"
-groups = ["main"]
+groups = ["dev"]
 files = [
     {file = "rgbmatrixemulator-0.11.6-py2.py3-none-any.whl", hash = "sha256:d71f94f739bc9f0d8604b3767e88b1065c1f0d46f55ce7300182d28d536dab01"},
     {file = "rgbmatrixemulator-0.11.6.tar.gz", hash = "sha256:b89cd72768a0b84e48dac0c0ca613a47277b78979f07e7941373e378cc102a4c"},
@@ -494,7 +494,7 @@ version = "6.5.2"
 description = "Tornado is a Python web framework and asynchronous networking library, originally developed at FriendFeed."
 optional = false
 python-versions = ">=3.9"
-groups = ["main"]
+groups = ["dev"]
 files = [
     {file = "tornado-6.5.2-cp39-abi3-macosx_10_9_universal2.whl", hash = "sha256:2436822940d37cde62771cff8774f4f00b3c8024fe482e16ca8387b8a2724db6"},
     {file = "tornado-6.5.2-cp39-abi3-macosx_10_9_x86_64.whl", hash = "sha256:583a52c7aa94ee046854ba81d9ebb6c81ec0fd30386d96f7640c96dad45a03ef"},
@@ -622,4 +622,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "052b4d71c51213623d63e33388bf3ce0f4a5049a779dd14a7dfc33c764e55d3a"
+content-hash = "72f5b7b1b67371cfc85bf72937aa319e79089db463b3b9d4a6b41b6b5de777e0"
