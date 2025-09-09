@@ -9,7 +9,7 @@ on:
 env:
   PY_VER: "3.11"
   PILLOW_VERSION: "10.3.0"
-  CACHE_KEY: "pillow-10.3.0-py3.11-armv6-v10.3.0-v4"
+  CACHE_KEY: "pillow-10.3.0-py3.11-armv6-v1" # Sicherer Cache-Schlüssel
 
 jobs:
   # Job 1: Pillow-Wheel ARMv6 bauen
@@ -36,21 +36,17 @@ jobs:
         if: steps.cache-restore.outputs.cache-hit != 'true'
         run: |
           echo "Cache miss. Building new Pillow wheel for ARMv6..."
-
           docker buildx build \
             --platform linux/arm/v6 \
             -f Dockerfile.pillow-wheel \
             --build-arg PILLOW_VERSION="${PILLOW_VERSION}" \
             --tag pillow-builder:latest \
             --load .
-
           mkdir -p wheels
-
           CONTAINER_ID=$(docker create --platform linux/arm/v6 pillow-builder:latest)
-
           docker cp "${CONTAINER_ID}:/out/." ./wheels/
-
           docker rm "${CONTAINER_ID}"
+
       - name: Save wheels cache
         if: steps.cache-restore.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
@@ -72,7 +68,7 @@ jobs:
           name: pillow-wheels
           path: wheels/
 
-# Job 2: Multi-arch Docker bauen & pushen, nutzt das Wheel-Artifact
+  # Job 2: Multi-arch Docker bauen & pushen, nutzt das Wheel-Artifact
   build-and-push:
     runs-on: ubuntu-latest
     needs: build-pillow
@@ -90,6 +86,15 @@ jobs:
         with:
           name: pillow-wheels
           path: wheels/
+
+      - name: Verify wheel artifact was downloaded
+        run: |
+          echo "Verifying that wheels/ directory and its content exist..."
+          ls -lR wheels
+          if [ ! -f wheels/pillow-*.whl ]; then
+            echo "::error::Pillow wheel file not found in wheels/ after download! The artifact might be missing or empty."
+            exit 1
+          fi
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -119,7 +124,6 @@ jobs:
       - name: Sanitize Docker tag
         id: sanitize
         run: |
-          # Ersetze alle '/' durch '-'
           TAG=$(echo "${{ github.ref_name }}" | sed 's/\//-/g')
           echo "TAG=${TAG}" >> $GITHUB_OUTPUT
 
