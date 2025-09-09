@@ -96,8 +96,8 @@ jobs:
         run: |
           echo "Checking for wheels directory..."
           ls -l wheels
-          if [ ! -f wheels/Pillow-*.whl ]; then
-            echo "ERROR: Pillow wheel not found after download!"
+          if [ ! -f wheels/pillow-*.whl ]; then
+            echo "ERROR: pillow wheel not found after download!"
             exit 1
           fi
 
