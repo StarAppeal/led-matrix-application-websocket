@@ -11,10 +11,10 @@ RUN python3 -m pip install --no-cache-dir "Cython>=0.29.30"
 
 COPY wheels/ /tmp/wheels/
 RUN set -eux; \
-    if ls /tmp/wheels/Pillow-*.whl >/dev/null 2&>1; then \
-        python3 -m pip install --no-cache-dir /tmp/wheels/Pillow-*.whl; \
+    if ls /tmp/wheels/pillow-*.whl >/dev/null 2&>1; then \
+        python3 -m pip install --no-cache-dir /tmp/wheels/pillow-*.whl; \
     else \
-        echo "ERROR: Kein lokales Pillow-Wheel gefunden (wheels/Pillow-*.whl). Abbruch."; \
+        echo "ERROR: Kein lokales Pillow-Wheel gefunden (wheels/pillow-*.whl). Abbruch."; \
         exit 42; \
     fi
 
