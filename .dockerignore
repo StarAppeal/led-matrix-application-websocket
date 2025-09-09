@@ -7,4 +7,3 @@ pycache
 .venv
 Dockerfile
 Dockerfile.pillow-wheel
-wheels/
