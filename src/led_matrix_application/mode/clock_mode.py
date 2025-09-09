@@ -6,6 +6,8 @@ from mode.abstract_mode import AbstractMode
 from PIL import Image
 from utils import get_rgb_matrix
 
+from pathlib import Path
+
 graphics = get_rgb_matrix().get("graphics")
 
 class ClockMode(AbstractMode):
@@ -15,7 +17,8 @@ class ClockMode(AbstractMode):
         self.icon = None
         self.temperature = ""
         self.font = graphics.Font()
-        self.font.LoadFont("fonts/clock.bdf")
+        font_path = Path(__file__).parent.parent / "fonts" / "clock.bdf"
+        self.font.LoadFont(str(font_path))
         self.offscreen_canvas = matrix.CreateFrameCanvas()
         self.timezone = None
         self.has_loaded = False
@@ -69,9 +72,13 @@ class ClockMode(AbstractMode):
         self.logger.info("Refreshing weather data: ")
         self.logger.info(data)
         try:
-            path = f"icons/clock/{data['weather']['icon']['raw']}.png"
-            with Image.open(path) as img:
+            icon_name = data['weather']['icon']['raw']
+            icon_path = Path(__file__).parent.parent / "icons" / "clock" / f"{icon_name}.png"
+
+            with Image.open(icon_path) as img:
                 self.icon = img.copy()
+
+            # --- DER REST BLEIBT GLEICH ---
             self.temperature = f"{int(round(data['weather']['temp']['cur']))}°C"
         except Exception as e:
             self.logger.error(f"Error in refresh_weather_data: {e}")

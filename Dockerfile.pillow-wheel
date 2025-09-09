@@ -1,4 +1,4 @@
-FROM balenalib/raspberry-pi-python:3.9-bullseye
+FROM balenalib/raspberry-pi-python:3.11-bullseye
 
 ARG PILLOW_VERSION=10.3.0
 

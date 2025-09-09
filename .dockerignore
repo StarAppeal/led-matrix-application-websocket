@@ -1,0 +1,9 @@
+.git
+.gitignore
+.idea
+.vscode
+pycache
+*.pyc
+.venv
+Dockerfile
+Dockerfile.pillow-wheel
