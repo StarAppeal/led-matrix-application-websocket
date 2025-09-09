@@ -9,7 +9,7 @@ on:
 env:
   PY_VER: "3.9"
   PILLOW_VERSION: "10.3.0"
-  CACHE_KEY: "pillow-10.3.0-py3.9-armv6-v10.3.0-v3"
+  CACHE_KEY: "pillow-10.3.0-py3.9-armv6-v10.3.0-v4"
 
 jobs:
   # Job 1: Pillow-Wheel ARMv6 bauen
@@ -36,22 +36,21 @@ jobs:
         if: steps.cache-restore.outputs.cache-hit != 'true'
         run: |
           echo "Cache miss. Building new Pillow wheel for ARMv6..."
-          
+
           docker buildx build \
             --platform linux/arm/v6 \
             -f Dockerfile.pillow-wheel \
             --build-arg PILLOW_VERSION="${PILLOW_VERSION}" \
             --tag pillow-builder:latest \
             --load .
-            
-          mkdir -p wheels
-          
-          CONTAINER_ID=$(docker create --platform linux/arm/v6 pillow-builder:latest)
-          
-          docker cp "${CONTAINER_ID}:/out/pillow-*.whl" ./wheels/
-          
-          docker rm "${CONTAINER_ID}"
 
+          mkdir -p wheels
+
+          CONTAINER_ID=$(docker create --platform linux/arm/v6 pillow-builder:latest)
+
+          docker cp "${CONTAINER_ID}:/out/." ./wheels/
+
+          docker rm "${CONTAINER_ID}"
       - name: Save wheels cache
         if: steps.cache-restore.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
