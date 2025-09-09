@@ -17,4 +17,4 @@ RUN set -eux; \
     echo "--- Content of /out after build ---"; \
     ls -lR /out; \
     \
-    test -f /out/Pillow-*.whl || (echo "FATAL: Pillow wheel file was not created!" && exit 1)
+    test -f /out/pillow-*.whl || (echo "FATAL: Pillow wheel file was not created!" && exit 1)

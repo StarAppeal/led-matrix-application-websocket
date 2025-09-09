@@ -9,7 +9,7 @@ on:
 env:
   PY_VER: "3.9"
   PILLOW_VERSION: "10.3.0"
-  CACHE_KEY: "pillow-10.3.0-py3.9-armv6-v10.3.0-v2"
+  CACHE_KEY: "pillow-10.3.0-py3.9-armv6-v10.3.0-v3"
 
 jobs:
   # Job 1: Pillow-Wheel ARMv6 bauen
@@ -37,7 +37,6 @@ jobs:
         run: |
           echo "Cache miss. Building new Pillow wheel for ARMv6..."
           
-          # 1. Baue das Image. Das neue Dockerfile prüft den Erfolg selbst.
           docker buildx build \
             --platform linux/arm/v6 \
             -f Dockerfile.pillow-wheel \
@@ -45,21 +44,13 @@ jobs:
             --tag pillow-builder:latest \
             --load .
             
-          # 2. Erstelle den Zielordner
           mkdir -p wheels
           
-          # 3. Erstelle einen temporären Container, explizit für die korrekte Plattform
-          echo "Creating temporary container..."
           CONTAINER_ID=$(docker create --platform linux/arm/v6 pillow-builder:latest)
           
-          # 4. Kopiere das Wheel aus dem Container
-          echo "Copying wheel from container ${CONTAINER_ID}..."
-          docker cp "${CONTAINER_ID}:/out/Pillow-*.whl" ./wheels/
+          docker cp "${CONTAINER_ID}:/out/pillow-*.whl" ./wheels/
           
-          # 5. Räume den Container auf
-          echo "Cleaning up container..."
           docker rm "${CONTAINER_ID}"
-          echo "Wheel copied successfully."
 
       - name: Save wheels cache
         if: steps.cache-restore.outputs.cache-hit != 'true'
@@ -68,17 +59,14 @@ jobs:
           path: wheels
           key: ${{ env.CACHE_KEY }}
 
-      # Step 1: Überprüfen, ob das Wheel existiert
       - name: Verify that wheel artifact exists
         run: |
-          echo "Listing contents of wheels/ directory:"
           ls -lR wheels
-          if [ ! -f wheels/Pillow-*.whl ]; then
+          if [ ! -f wheels/pillow-*.whl ]; then 
             echo "::error::Pillow wheel file not found in wheels/ directory!"
             exit 1
           fi
 
-      # Step 2: Das Artefakt hochladen
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v4
         with:
