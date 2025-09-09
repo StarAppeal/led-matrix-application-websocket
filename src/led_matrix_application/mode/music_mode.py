@@ -5,6 +5,9 @@ from mode.abstract_mode import AbstractMode
 from PIL import Image
 from utils import get_rgb_matrix
 
+from pathlib import Path
+
+
 graphics = get_rgb_matrix().get("graphics")
 
 IMAGE_SIZE = 50, 50
@@ -16,9 +19,12 @@ TEXT_SPEED = 20
 class MusicMode(AbstractMode):
     def __init__(self, matrix):
         super().__init__(matrix)
-        self.logo = Image.open("icons/spotify.png").convert("RGB")
+        logo_path = Path(__file__).parent.parent / "icons" / "spotify.png"
+        self.logo = Image.open(logo_path).convert("RGB")
+
         self.font = graphics.Font()
-        self.font.LoadFont("fonts/tamzen/1.bdf")
+        font_path = Path(__file__).parent.parent / "fonts" / "tamzen" / "1.bdf"
+        self.font.LoadFont(str(font_path))
 
         self.offscreen_canvas = matrix.CreateFrameCanvas()
 

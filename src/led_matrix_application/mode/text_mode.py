@@ -1,6 +1,7 @@
 import asyncio
 from mode.abstract_mode import AbstractMode
 from utils import get_rgb_matrix
+from pathlib import Path
 
 graphics = get_rgb_matrix().get("graphics")
 
@@ -24,8 +25,12 @@ class TextMode(AbstractMode):
     async def update_settings(self, settings):
         self.settings = settings
         if self.size != self.settings["size"]:
-            self.font.LoadFont(f"fonts/tamzen/{self.settings['size']}.bdf")
+            font_size = self.settings['size']
+            font_path = Path(__file__).parent.parent / "fonts" / "tamzen" / f"{font_size}.bdf"
+
+            self.font.LoadFont(str(font_path))
             self.size = self.settings["size"]
+
         self.calculate_text()
 
     def calculate_text(self):

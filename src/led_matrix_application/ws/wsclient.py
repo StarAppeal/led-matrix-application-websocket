@@ -34,7 +34,7 @@ class WebsocketClient:
                 async with websockets.connect(
                         self.url,
                         ssl=_ssl,
-                        extra_headers=headers,
+                        additional_headers=headers,
                         ping_interval=45,
                         max_size=2**24,
                 ) as websocket:
