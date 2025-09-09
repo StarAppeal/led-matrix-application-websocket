@@ -15,6 +15,9 @@ jobs:
   # Job 1: Pillow-Wheel ARMv6 bauen, aber nur wenn NICHT im Cache
   build-pillow:
     runs-on: ubuntu-latest
+    outputs:
+      # Output, um anzuzeigen, ob der Build-Schritt ausgeführt wurde
+      built-wheel: ${{ steps.build-wheel.outputs.executed }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,11 +29,6 @@ jobs:
           path: wheels
           key: ${{ env.CACHE_KEY }}
 
-      - name: Debug Cache Output
-        run: |
-          echo "Cache Hit? -> ${{ steps.cache-restore.outputs.cache-hit }}"
-          ls -l wheels || echo "Kein wheels Ordner gefunden"
-
       - name: Set up QEMU
         if: steps.cache-restore.outputs.cache-hit != 'true'
         uses: docker/setup-qemu-action@v3
@@ -40,8 +38,10 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build ARMv6 Pillow wheel (writes into ./wheels)
+        id: build-wheel # ID für den Output
         if: steps.cache-restore.outputs.cache-hit != 'true'
         run: |
+          echo "Building new Pillow wheel..."
           mkdir -p wheels
           docker buildx build \
             --platform linux/arm/v6 \
@@ -49,21 +49,27 @@ jobs:
             --build-arg PILLOW_VERSION="${PILLOW_VERSION}" \
             --output type=local,dest=./wheels \
             .
+          # Setze den Output, damit der Save-Schritt weiß, dass er laufen muss
+          echo "executed=true" >> $GITHUB_OUTPUT
 
       - name: Save wheels cache
-        if: steps.cache-restore.outputs.cache-hit != 'true'
+        if: steps.build-wheel.outputs.executed == 'true'
         uses: actions/cache/save@v4
         with:
           path: wheels
           key: ${{ env.CACHE_KEY }}
 
-      - name: List wheels (debug)
-        run: ls -l wheels || true
+      - name: Upload wheel artifact
+        # Lade den wheels Ordner IMMER als Artefakt hoch
+        uses: actions/upload-artifact@v4
+        with:
+          name: pillow-wheels
+          path: wheels/
 
   # Job 2: Multi-arch Docker bauen & pushen, nutzt das Wheel-Artifact
   build-and-push:
     runs-on: ubuntu-latest
-    needs: build-pillow
+    needs: build-pillow # Wartet auf den Abschluss von build-pillow
 
     permissions:
       contents: write
@@ -73,19 +79,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Restore wheels cache
-        uses: actions/cache/restore@v4
+      - name: Download wheel artifact
+        # Lade das Artefakt aus dem vorherigen Job herunter
+        uses: actions/download-artifact@v4
         with:
-          path: wheels
-          key: ${{ env.CACHE_KEY }}
-
-      - name: Debug Cache Output
-        run: |
-          echo "Cache Hit? -> ${{ steps.cache-restore.outputs.cache-hit }}"
-          ls -l wheels || echo "Kein wheels Ordner gefunden"
+          name: pillow-wheels
+          path: wheels/ # Entpacke es direkt in den Ordner ./wheels
 
       - name: Verify wheels in build context
-        run: ls -l wheels
+        run: |
+          echo "Checking for wheels directory..."
+          ls -l wheels
+          if [ ! -f wheels/Pillow-*.whl ]; then
+            echo "ERROR: Pillow wheel not found after download!"
+            exit 1
+          fi
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -93,7 +101,7 @@ jobs:
           python-version: ${{ env.PY_VER }}
 
       - name: Install Poetry
-        run: pip install poetry-plugin-export
+        run: pip install poetry poetry-plugin-export
 
       - name: Export requirements.txt
         run: |
@@ -107,17 +115,18 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to GHCR
-        run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build & Push
-        run: |
-          VERSION="${{ github.ref_name }}"
-          IMAGE_NAME="led-matrix-application-websocket"
-          OWNER_LC=$(echo "${{ github.actor }}" | tr '[:upper:]' '[:lower:]')
-
-          docker buildx create --use
-          docker buildx build \
-            --platform linux/amd64,linux/arm/v7,linux/arm/v6 \
-            -t ghcr.io/${OWNER_LC}/${IMAGE_NAME}:latest \
-            -t ghcr.io/${OWNER_LC}/${IMAGE_NAME}:${VERSION} \
-            --push .
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm/v7,linux/arm/v6
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/led-matrix-application-websocket:latest
+            ghcr.io/${{ github.repository_owner }}/led-matrix-application-websocket:${{ github.ref_name }}
