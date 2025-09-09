@@ -37,7 +37,7 @@ RUN apt-get update && apt-get install -o Acquire::Retries=5 -y --no-install-reco
     libjpeg62-turbo libtiff5 libopenjp2-7 libfreetype6 \
  && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /usr/local/lib/python3.9/site-packages/ /usr/local/lib/python3.11/site-packages/
+COPY --from=builder /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
 
 COPY --from=builder /app/led_matrix_application /app/
 COPY --from=builder /app/rgbmatrix /app/rgbmatrix
