@@ -7,7 +7,8 @@ RUN apt-get update && apt-get install -o Acquire::Retries=5 -y --no-install-reco
 WORKDIR /app
 
 RUN python3 -m pip install --no-cache-dir --upgrade pip wheel setuptools
-RUN python3 -m pip install --no-cache-dir "Cython>=0.29.30"
+RUN python3 -m pip install --no-cache-dir "Cython>=0.29.30" && \
+ln -s $(command -v cython) /usr/local/bin/cython3
 
 COPY wheels/ /tmp/wheels/
 RUN set -eux; \
