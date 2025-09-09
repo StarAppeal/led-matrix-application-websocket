@@ -15,12 +15,15 @@ jobs:
   # Job 1: Pillow-Wheel ARMv6 bauen, aber nur wenn NICHT im Cache
   build-pillow:
     runs-on: ubuntu-latest
-    outputs:
-      # Output, um anzuzeigen, ob der Build-Schritt ausgeführt wurde
-      built-wheel: ${{ steps.build-wheel.outputs.executed }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Restore wheels cache
         id: cache-restore
@@ -29,38 +32,50 @@ jobs:
           path: wheels
           key: ${{ env.CACHE_KEY }}
 
-      - name: Set up QEMU
-        if: steps.cache-restore.outputs.cache-hit != 'true'
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        if: steps.cache-restore.outputs.cache-hit != 'true'
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build ARMv6 Pillow wheel (writes into ./wheels)
-        id: build-wheel # ID für den Output
+      - name: Build Pillow wheel if not cached
         if: steps.cache-restore.outputs.cache-hit != 'true'
         run: |
-          echo "Building new Pillow wheel..."
-          mkdir -p wheels
+          echo "Cache miss. Building new Pillow wheel for ARMv6..."
+          
+          # 1. Baue das Image und lade es in den lokalen Docker-Daemon
           docker buildx build \
             --platform linux/arm/v6 \
             -f Dockerfile.pillow-wheel \
             --build-arg PILLOW_VERSION="${PILLOW_VERSION}" \
-            --output type=local,dest=./wheels \
-            .
-          # Setze den Output, damit der Save-Schritt weiß, dass er laufen muss
-          echo "executed=true" >> $GITHUB_OUTPUT
+            --tag pillow-builder:latest \
+            --load .
+            
+          # 2. Erstelle den Zielordner
+          mkdir -p wheels
+          
+          # 3. Erstelle einen temporären Container aus dem Image
+          CONTAINER_ID=$(docker create pillow-builder:latest)
+          
+          # 4. Kopiere NUR das Wheel aus dem Container an die richtige Stelle
+          docker cp "${CONTAINER_ID}:/out/Pillow-*.whl" ./wheels/
+          
+          # 5. Räume den temporären Container auf
+          docker rm "${CONTAINER_ID}"
 
       - name: Save wheels cache
-        if: steps.build-wheel.outputs.executed == 'true'
+        if: steps.cache-restore.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: wheels
           key: ${{ env.CACHE_KEY }}
 
+      # Step 1: Überprüfen, ob das Wheel existiert
+      - name: Verify that wheel artifact exists
+        run: |
+          echo "Listing contents of wheels/ directory:"
+          ls -lR wheels
+          if [ ! -f wheels/Pillow-*.whl ]; then
+            echo "::error::Pillow wheel file not found in wheels/ directory!"
+            exit 1
+          fi
+
+      # Step 2: Das Artefakt hochladen
       - name: Upload wheel artifact
-        # Lade den wheels Ordner IMMER als Artefakt hoch
         uses: actions/upload-artifact@v4
         with:
           name: pillow-wheels
