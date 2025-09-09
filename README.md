@@ -85,18 +85,20 @@ podman run --rm -it --env-file .env -p 8888:8888 ghcr.io/starappeal/led-matrix-a
 ## Configuration
 
 ### Environment Variables
-Create a `.env` file with the following variables:
+Create a `.env` file with your configuration. You can use the provided `.env.example` as a template:
+
+```bash
+cp .env.example .env
+```
+
+Then edit the `.env` file with your actual values:
 
 - `USE_EMULATOR`: Set to `True` when running locally to use the RGBMatrixEmulator
 - `WEBSOCKET_URL`: The URL of the WebSocket server the application will connect to
 - `JWT_TOKEN`: The JWT token used for authentication
 
-### Example `.env` File
-```env
-USE_EMULATOR=True
-WEBSOCKET_URL=wss://example.com/socket
-JWT_TOKEN=your-jwt-token-here
-```
+### Example Configuration
+See `.env.example` for a complete configuration template with all available options and documentation.
 
 ## Project Structure
 ```
