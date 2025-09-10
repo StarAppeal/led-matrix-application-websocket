@@ -78,7 +78,6 @@ class ClockMode(AbstractMode):
             with Image.open(icon_path) as img:
                 self.icon = img.copy()
 
-            # --- DER REST BLEIBT GLEICH ---
             self.temperature = f"{int(round(data['weather']['temp']['cur']))}°C"
         except Exception as e:
             self.logger.error(f"Error in refresh_weather_data: {e}")

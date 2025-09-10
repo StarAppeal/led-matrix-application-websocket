@@ -7,6 +7,8 @@ from mode.image_mode import ImageMode
 from mode.music_mode import MusicMode
 from mode.text_mode import TextMode
 from utils import get_rgb_matrix
+from mode.game_of_life_mode import GameOfLifeMode
+
 
 RGBMatrix = get_rgb_matrix().get("RGBMatrix")
 RGBMatrixOptions = get_rgb_matrix().get("RGBMatrixOptions")
@@ -25,6 +27,7 @@ class LEDMatrixController:
             "text": TextMode(self.matrix),
             "music": MusicMode(self.matrix),
             "image": ImageMode(self.matrix),
+            "game_of_life": GameOfLifeMode(self.matrix),
         }
         self.current_mode = None
         self.mode_started = False
