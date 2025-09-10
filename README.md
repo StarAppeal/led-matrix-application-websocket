@@ -65,21 +65,31 @@ The easiest way to develop is using Docker Compose, which provides a complete de
 To pull the latest Docker image from the GitHub Container Registry (GHCR):
 
 ```bash
-podman pull ghcr.io/starappeal/led-matrix-application-websocket:latest
+docker pull ghcr.io/starappeal/led-matrix-application-websocket:latest
 ```
 
 ### Running on Raspberry Pi
 When running on a Raspberry Pi, you **must run the container as privileged** to access hardware resources:
 
 ```bash
-podman run --rm -it --privileged --env-file .env ghcr.io/starappeal/led-matrix-application-websocket:latest
+docker run \
+    -d \
+    --privileged \
+    --network host \
+    --env-file /home/pi/led-matrix.env \
+    -v /run/dbus:/host/run/dbus:ro \
+    --name led-matrix-app \
+    --restart unless-stopped \
+    ghcr.io/starappeal/led-matrix-application-websocket:latest
 ```
+
+(You can also use `podman` instead of `docker`)
 
 ### Running Locally with Emulator
 For local testing with the emulator:
 
 ```bash
-podman run --rm -it --env-file .env -p 8888:8888 ghcr.io/starappeal/led-matrix-application-websocket:latest
+docker run --rm -it --env-file .env -p 8888:8888 ghcr.io/starappeal/led-matrix-application-websocket:latest
 ```
 
 ## Configuration
