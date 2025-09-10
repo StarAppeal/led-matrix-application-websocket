@@ -15,7 +15,7 @@ RUN set -eux; \
     if ls /tmp/wheels/pillow-*.whl >/dev/null 2&>1; then \
         python3 -m pip install --no-cache-dir /tmp/wheels/pillow-*.whl; \
     else \
-        echo "ERROR: Kein lokales Pillow-Wheel gefunden (wheels/pillow-*.whl). Abbruch."; \
+        echo "ERROR: No local Pillow wheel found (wheels/pillow-*.whl). Aborting."; \
         exit 42; \
     fi
 

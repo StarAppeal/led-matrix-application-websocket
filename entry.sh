@@ -6,18 +6,18 @@ check_internet() {
 }
 
 if check_internet; then
-  echo "Internetverbindung ist vorhanden. Starte die Hauptanwendung..."
+  echo "Internet connection is available. Starting the main application..."
   cd /app
   exec poetry run python3 led_matrix_application/main.py
 
 else
-  echo "Keine Internetverbindung. Starte WiFi Connect im Setup-Modus..."
+  echo "No internet connection. Starting WiFi Connect in setup mode..."
   cd /app
 
   poetry run python3 led_matrix_application/run_setup_mode.py &
 
   /usr/local/sbin/wifi-connect --portal-passphrase "12345678" --ui-directory /app/ui || true
 
-  echo "WLAN konfiguriert! Starte den Container neu..."
+  echo "WiFi configured! Restarting the container..."
   reboot
 fi
