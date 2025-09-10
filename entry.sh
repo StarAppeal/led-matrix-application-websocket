@@ -16,7 +16,7 @@ else
 
   poetry run python3 led_matrix_application/run_setup_mode.py &
 
-  /usr/local/sbin/wifi-connect --portal-passphrase "12345678" -s "LED-Matrix-Setup" --ui-directory /app/ui || true
+  /usr/local/sbin/wifi-connect --portal-passphrase "12345678" -portal-ssid "LED-Matrix-Setup" --ui-directory /app/ui || true
 
   echo "WiFi configured! Restarting the container..."
   reboot
