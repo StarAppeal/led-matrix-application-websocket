@@ -23,7 +23,7 @@ class GameOfLifeMode(AbstractMode):
         self.last_update_time = asyncio.get_event_loop().time()
 
     def _initialize_grid(self):
-        """Erstellt ein neues Gitter und füllt es zufällig mit lebenden Zellen."""
+        """Creates a new grid and randomly fills it with living cells."""
         self.grid_width = self.matrix.width // self.settings["cell_size"]
         self.grid_height = self.matrix.height // self.settings["cell_size"]
 
@@ -50,7 +50,7 @@ class GameOfLifeMode(AbstractMode):
             self._initialize_grid()
 
     async def _update_grid(self):
-        """Berechnet die nächste Generation des Spiels basierend auf den Regeln."""
+        """Calculates the next generation of the game based on the rules."""
         new_grid = [[0 for _ in range(self.grid_width)] for _ in range(self.grid_height)]
 
         for y in range(self.grid_height):
@@ -77,7 +77,7 @@ class GameOfLifeMode(AbstractMode):
         self.grid = new_grid
 
     def _draw_grid(self):
-        """Zeichnet das aktuelle Gitter auf den Canvas."""
+        """Draws the current grid on the canvas."""
         self.offscreen_canvas.Clear()
         cell_color = graphics.Color(*self.settings["color"])
         cell_size = self.settings["cell_size"]
