@@ -26,7 +26,7 @@ class WebsocketClient:
             try:
                 self.logger.info("Attempting to connect to WebSocket...")
 
-                if (self.url.startswith("wss://")):
+                if self.url.startswith("wss://"):
                     _ssl = self._create_ssl_context()
                 else:
                     _ssl = None
@@ -145,6 +145,4 @@ class WebsocketClient:
     def _create_ssl_context(self):
         """Creates and configures SSL context."""
         ssl_context = ssl.create_default_context()
-        #ssl_context.check_hostname = False
-        #ssl_context.verify_mode = ssl.CERT_NONE
         return ssl_context
