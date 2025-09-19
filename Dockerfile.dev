@@ -30,7 +30,6 @@ COPY src/pyproject.toml src/poetry.lock* ./
 RUN poetry lock && poetry install --no-root
 
 COPY src/ .
-COPY entry.sh /usr/bin/entry.sh
-RUN chmod +x /usr/bin/entry.sh
+RUN chmod +x /app/entry.sh
 
-CMD ["/usr/bin/entry.sh"]
+CMD ["/app/entry.sh"]
