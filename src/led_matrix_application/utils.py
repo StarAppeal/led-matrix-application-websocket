@@ -45,14 +45,14 @@ def setup_logging(max_length=100):
         "%(asctime)s [%(levelname)s] %(message)s"
     ))
 
-    # Füge den Handler dem Root-Logger hinzu
+    # Add the handler to the root logger
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.INFO)
     root_logger.addHandler(handler)
 
 
 def sanitize_json(data, max_length=100):
-    """Kürzt nur lange Strings oder große Datenstrukturen."""
+    """Truncates only long strings or large data structures."""
     if isinstance(data, dict):
         return {key: sanitize_json(value, max_length) for key, value in data.items()}
     elif isinstance(data, list):
