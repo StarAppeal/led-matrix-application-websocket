@@ -55,14 +55,12 @@ COPY --from=builder /usr/local/lib/python3.11/site-packages/ /usr/local/lib/pyth
 COPY --from=builder /app/led_matrix_application /app/
 COPY --from=builder /app/rgbmatrix /app/rgbmatrix
 
-COPY src/entry.sh /usr/bin/entry.sh
+COPY entry.sh /usr/bin/entry.sh
 COPY src/led_matrix_application/run_setup_mode.py /app/led_matrix_application/run_setup_mode.py
 COPY ui/ /app/ui
 
 RUN chmod +x /usr/bin/entry.sh
 
 ENV DBUS_SYSTEM_BUS_ADDRESS unix:path=/host/run/dbus/system_bus_socket
-
-RUN sed -i 's/\r$//' /usr/bin/entry.sh
 
 CMD ["/usr/bin/entry.sh"]
