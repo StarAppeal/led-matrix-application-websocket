@@ -55,7 +55,7 @@ COPY --from=builder /usr/local/lib/python3.11/site-packages/ /usr/local/lib/pyth
 COPY --from=builder /app/led_matrix_application /app/
 COPY --from=builder /app/rgbmatrix /app/rgbmatrix
 
-COPY entry.sh /usr/bin/entry.sh
+COPY src/entry.sh /usr/bin/entry.sh
 COPY src/led_matrix_application/run_setup_mode.py /app/led_matrix_application/run_setup_mode.py
 COPY ui/ /app/ui
 
