@@ -1,7 +1,7 @@
 FROM balenalib/raspberry-pi-python:3.11-bullseye AS builder
 
 RUN apt-get update && apt-get install -o Acquire::Retries=5 -y --no-install-recommends \
-    build-essential make git python3-dev pkg-config libssl-dev curl \
+    build-essential make git python3-dev pkg-config libssl-dev curl python3-numpy\
  && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
