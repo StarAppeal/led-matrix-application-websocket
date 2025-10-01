@@ -52,7 +52,7 @@ RUN set -eux; \
     rm /tmp/wifi-connect.tar.gz
 
 COPY --from=builder /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
-COPY --from=builder /app/led_matrix_application /app/
+COPY --from=builder /app/led_matrix_application /app/led_matrix_application
 COPY --from=builder /app/rgbmatrix /app/rgbmatrix
 
 COPY entry.sh /usr/bin/entry.sh
