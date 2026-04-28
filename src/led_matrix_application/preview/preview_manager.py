@@ -23,11 +23,16 @@ class PreviewServiceManager:
         url = f"{BACKEND_URL}/api/user/me"
         headers = {"Authorization": f"Bearer {token}"}
 
+        logger.info(f"Verifying token with backend: {url}")
+
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, headers=headers) as response:
                     if response.status == 200:
                         data = await response.json()
+
+                        logger.info(f"Backend response {data}")
+
                         return data["data"]["_id"], data["data"]["config"]["isAdmin"]
         except Exception as e:
             logger.error(f"Auth Error: {e}")
