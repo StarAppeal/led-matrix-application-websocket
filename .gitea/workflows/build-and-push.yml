@@ -1,4 +1,4 @@
-name: Build Pillow and Docker Image
+name: Build and Deploy Controller & Preview
 
 on:
   push:
@@ -9,10 +9,10 @@ on:
 env:
   PY_VER: "3.11"
   PILLOW_VERSION: "10.3.0"
-  CACHE_KEY: "pillow-10.3.0-py3.11-armv6-v1" # Sicherer Cache-Schlüssel
+  CACHE_KEY: "pillow-10.3.0-py3.11-armv6-v1"
+  REGISTRY: ghcr.io
 
 jobs:
-  # Job 1: Pillow-Wheel ARMv6 bauen
   build-pillow:
     runs-on: ubuntu-latest
     steps:
@@ -35,7 +35,6 @@ jobs:
       - name: Build Pillow wheel if not cached
         if: steps.cache-restore.outputs.cache-hit != 'true'
         run: |
-          echo "Cache miss. Building new Pillow wheel for ARMv6..."
           docker buildx build \
             --platform linux/arm/v6 \
             -f Dockerfile.pillow-wheel \
@@ -54,29 +53,15 @@ jobs:
           path: wheels
           key: ${{ env.CACHE_KEY }}
 
-      - name: Verify that wheel artifact exists
-        run: |
-          ls -lR wheels
-          if [ ! -f wheels/pillow-*.whl ]; then 
-            echo "::error::Pillow wheel file not found in wheels/ directory!"
-            exit 1
-          fi
-
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v4
         with:
           name: pillow-wheels
           path: wheels/
 
-  # Job 2: Multi-arch Docker bauen & pushen, nutzt das Wheel-Artifact
-  build-and-push:
+  build-pi:
     runs-on: ubuntu-latest
     needs: build-pillow
-
-    permissions:
-      contents: read
-      packages: write
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -87,48 +72,44 @@ jobs:
           name: pillow-wheels
           path: wheels/
 
-      - name: Verify wheel artifact was downloaded
-        run: |
-          echo "Verifying that wheels/ directory and its content exist..."
-          ls -lR wheels
-          if [ ! -f wheels/pillow-*.whl ]; then
-            echo "::error::Pillow wheel file not found in wheels/ after download! The artifact might be missing or empty."
-            exit 1
-          fi
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PY_VER }}
 
-      - name: Install Poetry
-        run: pip install poetry poetry-plugin-export
-
-      - name: Export requirements.txt from poetry
-        run: poetry export -f requirements.txt --output requirements.txt --without-hashes
-        working-directory: ./src
-
-      - name: Verify requirements.txt exists before build
+      - name: Install Poetry & Export Requirements
         run: |
-          echo "Verifying that src/requirements.txt was created..."
-          ls -l src/requirements.txt
-          if [ ! -f src/requirements.txt ]; then
-            echo "::error::src/requirements.txt was NOT created by poetry export!"
-            exit 1
-          fi
+          pip install poetry poetry-plugin-export
+          cd src
+          poetry export -f requirements.txt --output requirements.txt --without-hashes
 
-      - name: Set repository owner to lowercase
-        id: string-actions
-        run: echo "OWNER_LC=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
-
-      - name: Sanitize Docker tag
-        id: sanitize
-        run: |
-          TAG=$(echo "${{ github.ref_name }}" | sed 's/\//-/g')
-          echo "TAG=${TAG}" >> $GITHUB_OUTPUT
-
-      - name: Set up QEMU
+      - name: Set up QEMU & Buildx
         uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_PAT }}
+
+      - name: Build and Push PI Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.pi
+          platforms: linux/arm/v7,linux/arm/v6
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/starappeal/led-matrix-pi:latest
+            ${{ env.REGISTRY }}/starappeal/led-matrix-pi:${{ github.ref_name }}
+
+  build-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -136,17 +117,41 @@ jobs:
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_PAT }}
 
-      - name: Build and Push Docker image
-        id: build-and-push
+      - name: Build and Push PREVIEW Image
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: linux/amd64,linux/arm/v7,linux/arm/v6
+          file: Dockerfile.preview
+          platforms: linux/amd64
           push: true
           tags: |
-            ghcr.io/${{ steps.string-actions.outputs.OWNER_LC }}/led-matrix-application-websocket:latest
-            ghcr.io/${{ steps.string-actions.outputs.OWNER_LC }}/led-matrix-application-websocket:${{ steps.sanitize.outputs.TAG }}
+            ${{ env.REGISTRY }}/starappeal/ledmatrix-preview:latest
+            ${{ env.REGISTRY }}/starappeal/ledmatrix-preview:${{ github.ref_name }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-preview:
+    runs-on: ubuntu-latest
+    needs: build-preview
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: GHCR_PAT
+          script: |
+            cd /home/matrix/ledmatrix-deployment
+            
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml pull preview-service
+            
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d preview-service
+            
+            docker image prune -f
+        env:
+          GHCR_PAT: ${{ secrets.GHCR_PAT }}

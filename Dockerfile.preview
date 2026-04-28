@@ -1,0 +1,21 @@
+FROM python:3.11-slim-bullseye
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libjpeg-dev \
+    zlib1g-dev \
+    python3-dev \
+    libffi-dev \
+    libssl-dev \
+ && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+RUN pip install poetry poetry-plugin-export
+COPY src/pyproject.toml src/poetry.lock* ./
+
+RUN poetry config virtualenvs.create false && poetry lock && poetry install --no-root
+
+COPY src/ .
+
+CMD ["python", "-m", "led_matrix_application.preview.preview_server"]
