@@ -1,9 +1,10 @@
 import asyncio
 import json
 import ssl
-from zoneinfo import ZoneInfo
 import websockets
 import logging
+
+from led_matrix_application.message_router import MessageRouter
 
 class WebsocketClient:
     def __init__(self, url, jwt, led_matrix_controller, on_stop, error_queue):
@@ -19,6 +20,7 @@ class WebsocketClient:
         self.max_reconnect_delay = 60  # Maximum backoff time
         self.websocket = None
         self.logger = logging.getLogger(__name__)
+        self.message_router = MessageRouter(self.led_matrix_controller, self.logger)
 
     async def run(self):
         headers = [("Authorization", f"Bearer {self.jwt}")]
@@ -104,13 +106,11 @@ class WebsocketClient:
         if "type" not in json_message:
             await self.handle_state_update(json_message)
         elif json_message["type"] == "SETTINGS":
-            settings = json_message["payload"]
-            timezone = settings["timezone"]
-            self.led_matrix_controller.modes["clock"].timezone = ZoneInfo(timezone)
-        elif json_message["type"] == "SPOTIFY_UPDATE" and self.current_mode == "music":
-            await self.handle_spotify_update(json_message)
-        elif json_message["type"] == "WEATHER_UPDATE" and self.current_mode == "clock":
-            await self.led_matrix_controller.modes["clock"].update_weather_data(json_message["payload"])
+            await self.message_router.handle(json_message)
+        elif json_message["type"] == "SPOTIFY_UPDATE":
+            await self.message_router.handle(json_message, current_mode=self.current_mode)
+        elif json_message["type"] == "WEATHER_UPDATE":
+            await self.message_router.handle(json_message, current_mode=self.current_mode)
         elif json_message["type"] == "STATE":
             await self.handle_state_update(json_message["payload"])
 
@@ -130,9 +130,6 @@ class WebsocketClient:
 
         self.current_mode = new_mode
 
-    async def handle_spotify_update(self, message):
-        self.logger.debug("SPOTIFY_UPDATE")
-        await self.led_matrix_controller.modes["music"].update_song_data(message["payload"])
 
     async def _handle_reconnect(self, error):
         """Reconnect logic with exponential backoff."""

@@ -1,9 +1,6 @@
 import asyncio
 import random
-from mode.abstract_mode import AbstractMode
-from utils import get_rgb_matrix
-
-graphics = get_rgb_matrix().get("graphics")
+from led_matrix_application.mode.abstract_mode import AbstractMode
 
 
 class GameOfLifeMode(AbstractMode):
@@ -79,7 +76,7 @@ class GameOfLifeMode(AbstractMode):
     def _draw_grid(self):
         """Draws the current grid on the canvas."""
         self.offscreen_canvas.Clear()
-        cell_color = graphics.Color(*self.settings["color"])
+        cell_color = self.graphics.Color(*self.settings["color"])
         cell_size = self.settings["cell_size"]
 
         for y, row in enumerate(self.grid):
@@ -88,7 +85,14 @@ class GameOfLifeMode(AbstractMode):
                     px = x * cell_size
                     py = y * cell_size
                     for i in range(cell_size):
-                        graphics.DrawLine(self.offscreen_canvas, px, py + i, px + cell_size - 1, py + i, cell_color)
+                        self.graphics.DrawLine(
+                            self.offscreen_canvas,
+                            px,
+                            py + i,
+                            px + cell_size - 1,
+                            py + i,
+                            cell_color,
+                        )
 
     async def update_display(self):
         if not self.grid:

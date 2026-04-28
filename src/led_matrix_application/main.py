@@ -2,7 +2,7 @@ import asyncio
 import logging
 import os
 from controller import led_matrix_controller
-from utils import setup_logging
+from led_matrix_application.utils import setup_logging
 from ws.wsclient import WebsocketClient
 
 

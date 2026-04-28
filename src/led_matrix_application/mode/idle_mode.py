@@ -1,5 +1,5 @@
 import asyncio
-from mode.abstract_mode import AbstractMode
+from led_matrix_application.mode.abstract_mode import AbstractMode
 
 class IdleMode(AbstractMode):
 

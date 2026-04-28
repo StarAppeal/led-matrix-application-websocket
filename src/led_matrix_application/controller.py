@@ -1,7 +1,6 @@
 import asyncio
-import queue
 
-from led_matrix_controller import LEDMatrixController
+from led_matrix_application.led_matrix_controller import LEDMatrixController
 
 error_queue = asyncio.Queue()
 

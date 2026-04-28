@@ -1,18 +1,12 @@
 import json
-import os
-
-from dotenv import load_dotenv
-
 import logging
+from dotenv import load_dotenv
 
 
 def get_rgb_matrix():
     load_dotenv()
 
-    if os.getenv("USE_EMULATOR") == "True":
-        from RGBMatrixEmulator import RGBMatrix, RGBMatrixOptions, graphics
-    else:
-        from rgbmatrix import RGBMatrix, RGBMatrixOptions, graphics
+    from rgbmatrix import RGBMatrix, RGBMatrixOptions, graphics
 
     return {
         "RGBMatrix": RGBMatrix,

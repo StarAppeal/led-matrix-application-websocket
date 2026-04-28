@@ -1,12 +1,12 @@
 # LED Matrix Application WebSocket
 
 ## Overview
-This project provides a WebSocket-based LED Matrix Application that can display content on RGB LED matrices. The application is designed to run on Raspberry Pi hardware or locally using an emulator for development purposes.
+This project provides a WebSocket-based LED Matrix Application that can display content on RGB LED matrices. The application is designed to run on Raspberry Pi hardware or locally using a preview renderer for development purposes.
 
 ## Features
 - WebSocket communication for real-time control
 - RGB LED matrix support via rpi-rgb-led-matrix library
-- Local development with emulator support
+- Local development with preview support
 - Docker containerization for easy deployment
 - Poetry-based dependency management
 
@@ -85,12 +85,20 @@ docker run \
 
 (You can also use `podman` instead of `docker`)
 
-### Running Locally with Emulator
-For local testing with the emulator:
+### Running the Preview Server
+Run the preview server locally to stream frames to the UI:
 
 ```bash
-docker run --rm -it --env-file .env -p 8888:8888 ghcr.io/starappeal/led-matrix-application-websocket:latest
+cd src
+poetry run python -m led_matrix_application.preview.preview_server
 ```
+
+## Preview Rendering
+The preview server now uses an isolated numpy-backed renderer per session. This avoids shared global state and allows multiple preview sessions in parallel.
+
+- Preview uses `PreviewDisplay` (no emulator required)
+- Hardware still uses `HardwareDisplay`
+- Frames are accessed via `MatrixDisplay.get_frame()` for WebSocket streaming
 
 ## Configuration
 
@@ -103,7 +111,6 @@ cp .env.example .env
 
 Then edit the `.env` file with your actual values:
 
-- `USE_EMULATOR`: Set to `True` when running locally to use the RGBMatrixEmulator
 - `WEBSOCKET_URL`: The URL of the WebSocket server the application will connect to
 - `JWT_TOKEN`: The JWT token used for authentication
 
@@ -135,14 +142,12 @@ led-matrix-application-websocket/
 - **Pillow**: Image processing for LED matrix
 - **python-dotenv**: Environment variable management
 - **rpi-rgb-led-matrix**: Hardware interface for RGB LED matrices
-- **rgbmatrixemulator**: Development emulator (dev dependency)
 
 ## Troubleshooting
 
 ### Common Issues
 1. **Permission errors on Raspberry Pi**: Ensure the container runs with `--privileged` flag
 2. **WebSocket connection issues**: Verify `WEBSOCKET_URL` and `JWT_TOKEN` are correct
-3. **Emulator not working**: Ensure `USE_EMULATOR=True` is set in your `.env` file
 
 ### Debugging
 - Check container logs: `docker logs <container_id>` or `docker-compose logs`
@@ -152,5 +157,3 @@ led-matrix-application-websocket/
 ### Development Tips
 - Use the Docker Compose setup for consistent development environment
 - The development container includes volume mounts for live code reloading
-- X11 forwarding is configured for emulator display on host systems
-

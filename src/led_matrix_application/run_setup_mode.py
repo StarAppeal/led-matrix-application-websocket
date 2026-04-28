@@ -1,7 +1,7 @@
 import asyncio
 import sys
-from mode.text_mode import TextMode
-from utils import get_rgb_matrix
+from led_matrix_application.mode.text_mode import TextMode
+from led_matrix_application.display import HardwareDisplay
 
 
 SETUP_SETTINGS = {
@@ -14,15 +14,7 @@ SETUP_SETTINGS = {
 
 async def main():
     try:
-        matrix_data = get_rgb_matrix()
-        RGBMatrix = matrix_data.get("RGBMatrix")
-        RGBMatrixOptions = matrix_data.get("RGBMatrixOptions")
-
-        options = RGBMatrixOptions()
-        options.rows = 64
-        options.cols = 64
-
-        matrix = RGBMatrix(options=options)
+        matrix = HardwareDisplay(rows=64, cols=64, brightness=50)
 
         setup_mode = TextMode(matrix)
 

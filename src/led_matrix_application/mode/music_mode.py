@@ -1,18 +1,14 @@
 import asyncio
 import logging
 from urllib.request import urlopen
-from mode.abstract_mode import AbstractMode
+from led_matrix_application.mode.abstract_mode import AbstractMode
 from PIL import Image
-from utils import get_rgb_matrix
 
 from pathlib import Path
 
 
-graphics = get_rgb_matrix().get("graphics")
-
 IMAGE_SIZE = 50, 50
 IMAGE_SIZE_FULLSCREEN = 64, 64
-COLOR_WHITE = graphics.Color(255, 255, 255)
 TEXT_SPEED = 20
 
 
@@ -22,7 +18,7 @@ class MusicMode(AbstractMode):
         logo_path = Path(__file__).parent.parent / "icons" / "spotify.png"
         self.logo = Image.open(logo_path).convert("RGB")
 
-        self.font = graphics.Font()
+        self.font = self.graphics.Font()
         font_path = Path(__file__).parent.parent / "fonts" / "tamzen" / "1.bdf"
         self.font.LoadFont(str(font_path))
 
@@ -41,6 +37,7 @@ class MusicMode(AbstractMode):
         self.offset_left = 0
         self.is_mode_active = False
         self.logger = logging.getLogger(__name__)
+        self.color_white = self.graphics.Color(255, 255, 255)
 
     async def start(self):
         self.offscreen_canvas.Clear()
@@ -84,22 +81,22 @@ class MusicMode(AbstractMode):
 
         self.offscreen_canvas.Clear()
 
-        graphics.DrawText(
+        self.graphics.DrawText(
             self.offscreen_canvas,
             self.font,
             self.offset_left,
             61,
-            COLOR_WHITE,
+            self.color_white,
             self.text,
         )
 
         if self.text_width > self.offscreen_canvas.width:
-            graphics.DrawText(
+            self.graphics.DrawText(
                 self.offscreen_canvas,
                 self.font,
                 self.offset_left + self.total_width,
                 61,
-                COLOR_WHITE,
+                self.color_white,
                 self.text,
             )
 

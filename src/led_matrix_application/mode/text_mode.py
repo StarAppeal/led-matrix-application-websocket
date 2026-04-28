@@ -1,14 +1,12 @@
 import asyncio
-from mode.abstract_mode import AbstractMode
-from utils import get_rgb_matrix
+from led_matrix_application.mode.abstract_mode import AbstractMode
 from pathlib import Path
 
-graphics = get_rgb_matrix().get("graphics")
 
 class TextMode(AbstractMode):
     def __init__(self, matrix):
         super().__init__(matrix)
-        self.font = graphics.Font()
+        self.font = self.graphics.Font()
         self.size = None
         self.offscreen_canvas = matrix.CreateFrameCanvas()
         self.frame = 0
@@ -104,22 +102,22 @@ class TextMode(AbstractMode):
             y2 = rounded_offset_top + ((i + 2) * self.font.height) + self.total_height
 
             if 0 <= y1 < 64 + self.font.height:
-                graphics.DrawText(
+                self.graphics.DrawText(
                     self.offscreen_canvas,
                     self.font,
                     offset_left,
                     y1,
-                    graphics.Color(*self.settings["color"]),
+                    self.graphics.Color(*self.settings["color"]),
                     trimmed_line,
                 )
 
             if self.total_height > 64 and 0 <= y2 < 64 + self.font.height:
-                graphics.DrawText(
+                self.graphics.DrawText(
                     self.offscreen_canvas,
                     self.font,
                     offset_left,
                     y2,
-                    graphics.Color(*self.settings["color"]),
+                    self.graphics.Color(*self.settings["color"]),
                     trimmed_line,
                 )
 

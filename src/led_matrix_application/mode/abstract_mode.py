@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 class AbstractMode(ABC):
     def __init__(self, matrix):
         self.matrix = matrix
+        self.graphics = matrix.graphics
         self.settings = None
 
     @abstractmethod

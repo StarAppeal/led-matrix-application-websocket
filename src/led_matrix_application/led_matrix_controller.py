@@ -1,26 +1,19 @@
 import asyncio
 import logging
 import traceback
-from mode.clock_mode import ClockMode
-from mode.idle_mode import IdleMode
-from mode.image_mode import ImageMode
-from mode.music_mode import MusicMode
-from mode.text_mode import TextMode
-from utils import get_rgb_matrix
-from mode.game_of_life_mode import GameOfLifeMode
+from led_matrix_application.mode.clock_mode import ClockMode
+from led_matrix_application.mode.idle_mode import IdleMode
+from led_matrix_application.mode.image_mode import ImageMode
+from led_matrix_application.mode.music_mode import MusicMode
+from led_matrix_application.mode.text_mode import TextMode
+from led_matrix_application.mode.game_of_life_mode import GameOfLifeMode
+from led_matrix_application.display import HardwareDisplay
 
-
-RGBMatrix = get_rgb_matrix().get("RGBMatrix")
-RGBMatrixOptions = get_rgb_matrix().get("RGBMatrixOptions")
 
 class LEDMatrixController:
-    def __init__(self, error_queue, target_fps=60):
+    def __init__(self, error_queue, target_fps=60, display=None):
         self.error_queue = error_queue
-        options = RGBMatrixOptions()
-        options.rows = 64
-        options.cols = 64
-        options.brightness = 50
-        self.matrix = RGBMatrix(options=options)
+        self.matrix = display or HardwareDisplay(rows=64, cols=64, brightness=50)
         self.modes = {
             "idle": IdleMode(self.matrix),
             "clock": ClockMode(self.matrix),

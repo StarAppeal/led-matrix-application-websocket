@@ -2,13 +2,11 @@ import asyncio
 import logging
 from datetime import date, datetime
 
-from mode.abstract_mode import AbstractMode
+from led_matrix_application.mode.abstract_mode import AbstractMode
 from PIL import Image
-from utils import get_rgb_matrix
 
 from pathlib import Path
 
-graphics = get_rgb_matrix().get("graphics")
 
 class ClockMode(AbstractMode):
     def __init__(self, matrix):
@@ -16,7 +14,7 @@ class ClockMode(AbstractMode):
         self.offscreen_canvas = None
         self.icon = None
         self.temperature = ""
-        self.font = graphics.Font()
+        self.font = self.graphics.Font()
         font_path = Path(__file__).parent.parent / "fonts" / "clock.bdf"
         self.font.LoadFont(str(font_path))
         self.offscreen_canvas = matrix.CreateFrameCanvas()
@@ -39,29 +37,29 @@ class ClockMode(AbstractMode):
         if not self.has_loaded:
             return
         self.offscreen_canvas.Clear()
-        display_color = graphics.Color(*self.settings["color"])
+        display_color = self.graphics.Color(*self.settings["color"])
         aware_time = datetime.now(self.timezone)
         time_hours = aware_time.strftime("%H")
         time_minutes = aware_time.strftime("%M")
 
-        graphics.DrawText(
+        self.graphics.DrawText(
             self.offscreen_canvas, self.font, 10, 16, display_color, time_hours
         )
         if aware_time.second % 2 == 0:
-            graphics.DrawText(
+            self.graphics.DrawText(
                 self.offscreen_canvas, self.font, 27, 15, display_color, ":"
             )
-        graphics.DrawText(
+        self.graphics.DrawText(
             self.offscreen_canvas, self.font, 36, 16, display_color, time_minutes
         )
 
         display_date = date.today().strftime("%d %b")
-        graphics.DrawText(
+        self.graphics.DrawText(
             self.offscreen_canvas, self.font, 5, 58, display_color, display_date
         )
 
         self.draw_icon(4, 24)
-        graphics.DrawText(
+        self.graphics.DrawText(
             self.offscreen_canvas, self.font, 24, 37, display_color, self.temperature
         )
 

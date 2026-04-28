@@ -1,9 +1,11 @@
 import asyncio
-from mode.abstract_mode import AbstractMode
-from PIL import Image, ImageSequence
 import re
-from io import BytesIO
 import base64
+import logging
+from io import BytesIO
+from PIL import Image, ImageSequence
+from led_matrix_application.mode.abstract_mode import AbstractMode
+
 
 class ImageMode(AbstractMode):
     def __init__(self, matrix):
@@ -13,6 +15,7 @@ class ImageMode(AbstractMode):
         self.frame_durations = []
         self.current_frame = 0
         self.offset = (0, 0)
+        self.logger = logging.getLogger(__name__)
 
     async def start(self):
         self.offscreen_canvas.Clear()
@@ -24,39 +27,61 @@ class ImageMode(AbstractMode):
     async def update_settings(self, settings):
         self.offscreen_canvas.Clear()
 
-        image_data = re.sub('^data:image/.+;base64,', '', settings['image'])
+        loop = asyncio.get_running_loop()
+        try:
+            frames, durations, offset = await loop.run_in_executor(
+                None, self._decode_and_process_image, settings['image']
+            )
+
+            self.image_frames = frames
+            self.frame_durations = durations
+            self.offset = offset
+            self.current_frame = 0
+
+            if self.image_frames:
+                first_frame = self.image_frames[0]
+                self.offscreen_canvas.SetImage(
+                    first_frame, self.offset[0], self.offset[1], False
+                )
+                self.offscreen_canvas = self.matrix.SwapOnVSync(self.offscreen_canvas)
+
+        except Exception as e:
+            self.logger.error(f"Error processing image: {e}")
+
+    def _decode_and_process_image(self, base64_image):
+        image_data = re.sub('^data:image/.+;base64,', '', base64_image)
         decoded_image = BytesIO(base64.b64decode(image_data))
 
         img = Image.open(decoded_image)
-        self.current_frame = 0
-        self.frame_durations = []
+        image_frames = []
+        frame_durations = []
+
         if img.format == "GIF":
-            self.image_frames = []
             for frame in ImageSequence.Iterator(img):
-                self.image_frames.append(self.process_frame(frame.copy()))
-                self.frame_durations.append(frame.info.get("duration", 100))
+                image_frames.append(self.process_frame(frame.copy()))
+                frame_durations.append(frame.info.get("duration", 100))
         else:
-            self.image_frames = [self.process_frame(img)]
+            image_frames = [self.process_frame(img)]
 
-        first_frame = self.image_frames[0]
-        self.offset = (64 - first_frame.size[0]) // 2, (
-            64 - first_frame.size[1]
-        ) // 2
-
-        self.offscreen_canvas.SetImage(
-            first_frame, self.offset[0], self.offset[1], False
+        first_frame = image_frames[0]
+        offset = (
+            (64 - first_frame.size[0]) // 2,
+            (64 - first_frame.size[1]) // 2
         )
-        self.offscreen_canvas = self.matrix.SwapOnVSync(self.offscreen_canvas)
+        return image_frames, frame_durations, offset
 
     async def update_display(self):
         if not self.image_frames or not self.frame_durations:
             return
+
         start_time = asyncio.get_event_loop().time()
         img = self.image_frames[self.current_frame]
         self.offscreen_canvas.Clear()
         self.offscreen_canvas.SetImage(img, self.offset[0], self.offset[1], False)
+
         self.current_frame = (self.current_frame + 1) % len(self.image_frames)
         self.offscreen_canvas = self.matrix.SwapOnVSync(self.offscreen_canvas)
+
         end_time = asyncio.get_event_loop().time()
         calculation_time = end_time - start_time
         sleep_time = max(
