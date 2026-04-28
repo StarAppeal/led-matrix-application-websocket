@@ -9,7 +9,7 @@ from led_matrix_application.preview.preview_session import PreviewSession
 from led_matrix_application.preview.shared_renderer import SharedRenderer
 
 logger = logging.getLogger("PreviewManager")
-BACKEND_URL = os.getenv("BACKEND_INTERNAL_URL", "http://backend:3000")
+BACKEND_URL = os.getenv("BACKEND_INTERNAL_URL", "http://ledmatrix-backend:3000")
 
 
 class PreviewServiceManager:
