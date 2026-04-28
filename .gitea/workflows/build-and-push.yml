@@ -131,8 +131,6 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/starappeal/ledmatrix-preview:latest
             ${{ env.REGISTRY }}/starappeal/ledmatrix-preview:${{ github.ref_name }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
   deploy-preview:
     runs-on: ubuntu-latest
