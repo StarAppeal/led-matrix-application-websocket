@@ -148,10 +148,14 @@ jobs:
           script: |
             cd /home/matrix/ledmatrix-deployment
             
+            echo "$GHCR_PAT" | docker login ghcr.io -u starappeal --password-stdin  
+            
             docker compose -f docker-compose.yml -f docker-compose.prod.yml pull preview-service
             
             docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d preview-service
             
             docker image prune -f
+            
+            docker logout ghcr.io
         env:
           GHCR_PAT: ${{ secrets.GHCR_PAT }}
