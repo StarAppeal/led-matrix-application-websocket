@@ -1,79 +1,67 @@
 import asyncio
-import numpy as np
-from PIL import Image
-import io
-import base64
 import logging
 
 logger = logging.getLogger("SharedRenderer")
 
-
+TARGET_FPS = 30
 class SharedRenderer:
     def __init__(self):
         self.sessions = {}
         self.running = True
+        self.frame_writer = None
+
+    async def _connect_frame_socket(self):
+        while self.running:
+            try:
+                _, writer = await asyncio.open_connection('rust-preview', 5001)
+                self.frame_writer = writer
+                logger.info("connected to Frame-Socket (5001) on rust!")
+                return
+            except Exception:
+                await asyncio.sleep(1)
 
     def register(self, session):
         self.sessions[session.user_id] = session
-        logger.info(f"Session registered: user_id={session.user_id}")
 
     def unregister(self, user_id):
         self.sessions.pop(user_id, None)
-        logger.info(f"Session unregistered: user_id={user_id}")
 
     async def start(self):
-        logger.info("shared renderer started")
+        await self._connect_frame_socket()
 
         while self.running:
-            tasks = [
-                self.render_session(session)
-                for session in list(self.sessions.values())
-            ]
+            if not self.frame_writer:
+                # check if this needs to be the same as TARGET_FP
+                await asyncio.sleep(0.1)
+                continue
 
-            await asyncio.gather(*tasks, return_exceptions=True)
+            for user_id, session in list(self.sessions.items()):
+                self.send_frame_to_buffer(session)
 
-            # 10 FPS, change if needed
-            await asyncio.sleep(0.1)
+            try:
+                await self.frame_writer.drain()
+            except Exception as e:
+                logger.error(f"lost connection to rust socket: {e}")
+                self.frame_writer = None
+                asyncio.create_task(self._connect_frame_socket())
 
-    async def render_session(self, session):
-        controller = session.controller
+            await asyncio.sleep(1 / TARGET_FPS)
 
-        if not controller.mode_started:
-            return
+    def send_frame_to_buffer(self, session):
+        if not session.controller.mode_started: return
 
-        try:
-            frame_array = controller.matrix.get_frame()
-        except Exception as exc:
-            logger.error(f"frame error user_id={session.user_id}: {exc}")
-            return
-
-        if frame_array is None:
-            return
+        frame_array = session.controller.matrix.get_frame()
+        if frame_array is None: return
 
         current_bytes = frame_array.tobytes()
-
-        if current_bytes == session.last_frame_bytes:
-            return
-
+        if current_bytes == session.last_frame_bytes: return
         session.last_frame_bytes = current_bytes
 
-        loop = asyncio.get_running_loop()
+        user_id_bytes = session.user_id.encode('utf-8')
+        header = bytes([len(user_id_bytes)]) + user_id_bytes
+        packet = header + current_bytes
 
         try:
-            base64_str = await loop.run_in_executor(
-                None,
-                self.encode_frame,
-                frame_array
-            )
-
-            await session.send_frame(base64_str)
-        except Exception as exc:
-            logger.error(f"error while sending user_id={session.user_id}: {exc}")
-
-    def encode_frame(self, frame_array):
-        img = Image.fromarray(np.uint8(frame_array), 'RGB')
-        buffer = io.BytesIO()
-
-        img.save(buffer, format="PNG", compress_level=1)
-
-        return base64.b64encode(buffer.getvalue()).decode("utf-8")
+            self.frame_writer.write(packet)
+        except:
+            pass

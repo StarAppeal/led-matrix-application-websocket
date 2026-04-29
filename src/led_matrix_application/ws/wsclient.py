@@ -108,9 +108,9 @@ class WebsocketClient:
         elif json_message["type"] == "SETTINGS":
             await self.message_router.handle(json_message)
         elif json_message["type"] == "SPOTIFY_UPDATE":
-            await self.message_router.handle(json_message, current_mode=self.current_mode)
+            await self.message_router.handle(json_message)
         elif json_message["type"] == "WEATHER_UPDATE":
-            await self.message_router.handle(json_message, current_mode=self.current_mode)
+            await self.message_router.handle(json_message)
         elif json_message["type"] == "STATE":
             await self.handle_state_update(json_message["payload"])
 

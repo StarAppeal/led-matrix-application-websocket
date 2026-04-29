@@ -11,6 +11,8 @@ from led_matrix_application.utils import get_rgb_matrix
 
 ColorTuple = Tuple[int, int, int]
 
+_GLOBAL_FONT_CACHE = {}
+
 
 class MatrixDisplay(ABC):
     def __init__(self, width: int, height: int, brightness: int = 50):
@@ -162,6 +164,15 @@ class PreviewFont:
         self._glyphs: Dict[int, _BdfGlyph] = {}
 
     def LoadFont(self, path: str) -> None:
+        if path in _GLOBAL_FONT_CACHE:
+            cached = _GLOBAL_FONT_CACHE[path]
+            self.ascent = cached['ascent']
+            self.descent = cached['descent']
+            self.height = cached['height']
+            self._default_width = cached['default_width']
+            self._glyphs = cached['glyphs']
+            return
+
         self._glyphs = {}
         self.ascent = 0
         self.descent = 0
@@ -184,11 +195,7 @@ class PreviewFont:
                         self._default_width = int(parts[1])
                         self.height = int(parts[2])
                 elif line.startswith("STARTCHAR"):
-                    current_glyph = {
-                        "encoding": None,
-                        "dwidth": self._default_width,
-                        "bbx": None,
-                    }
+                    current_glyph = {"encoding": None, "dwidth": self._default_width, "bbx": None}
                     bitmap_rows = []
                 elif line.startswith("ENCODING") and current_glyph is not None:
                     current_glyph["encoding"] = int(line.split()[1])
@@ -210,6 +217,12 @@ class PreviewFont:
 
         if self.height == 0:
             self.height = self.ascent + self.descent
+
+        _GLOBAL_FONT_CACHE[path] = {
+            'ascent': self.ascent, 'descent': self.descent,
+            'height': self.height, 'default_width': self._default_width,
+            'glyphs': self._glyphs
+        }
 
     def _build_glyph(self, data, bitmap_rows: List[str]) -> Optional[_BdfGlyph]:
         if data.get("bbx") is None:
