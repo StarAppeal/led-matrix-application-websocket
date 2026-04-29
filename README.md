@@ -1,3 +1,9 @@
+# DEPRECATED
+# DEPRECATED
+# DEPRECATED
+
+
+
 # LED Matrix Application WebSocket
 
 ## Overview
