@@ -79,15 +79,15 @@ class LEDMatrixController:
             await self.update_settings(state[mode_name])
 
     async def run(self):
-        while True:
-            try:
+        self.logger.info("Controller-Loop started.")
+        try:
+            while True:
                 await self.update_display()
-            except Exception as e:
-                error_message = {
-                    "type": "ERROR",
-                    "message": str(e),
-                    "traceback": traceback.format_exc(),
-                }
-                await self.error_queue.put(error_message)
-                self.logger.error(f"Error in LEDMatrixController: {e}")
-            await asyncio.sleep(self.sleep_time)
+                await asyncio.sleep(self.sleep_time)
+        except asyncio.CancelledError:
+            self.logger.info(f"Controller-Loop got canceled.")
+            if self.current_mode:
+                await self.current_mode.stop()
+            raise
+        except Exception as e:
+            self.logger.error(f"Error in LEDMatrixController Loop: {e}")

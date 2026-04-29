@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 import websockets
 
@@ -18,6 +17,7 @@ class PreviewSession:
         self.controller = None
         self.last_frame_bytes = None
         self.last_sent = 0  # FPS throttling
+        self.run_task = None
 
     async def start(self):
         logger.info(f"Starting session {self.user_id}")
@@ -29,9 +29,19 @@ class PreviewSession:
         self.message_router = MessageRouter(self.controller, logger)
 
         await self.controller.switch_mode("idle")
-        asyncio.create_task(self.controller.run())
+        self.run_task = asyncio.create_task(self.controller.run())
 
     async def stop(self):
+        if self.controller:
+            if self.controller.current_mode:
+                await self.controller.current_mode.stop()
+
+        if self.run_task:
+            self.run_task.cancel()
+            try:
+                await self.run_task
+            except asyncio.CancelledError:
+                pass
         logger.info(f"Stopping session {self.user_id}")
 
     async def handle_command(self, data):
