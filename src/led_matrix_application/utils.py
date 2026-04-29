@@ -1,7 +1,13 @@
 import json
 import logging
 from dotenv import load_dotenv
+import os
 
+RUST_HOST = os.getenv("RUST_HOST", "preview-sidecar")
+
+RUST_FRAME_SOCKET_PORT = os.getenv("RUST_FRAME_SOCKET_PORT", 5001)
+
+RUST_COMMAND_SOCKET_PORT = os.getenv("RUST_COMMAND_SOCKET_PORT", 5002)
 
 def get_rgb_matrix():
     load_dotenv()

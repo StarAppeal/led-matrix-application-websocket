@@ -1,9 +1,12 @@
 import asyncio
 import logging
 
+from utils import RUST_HOST, RUST_FRAME_SOCKET_PORT
+
 logger = logging.getLogger("SharedRenderer")
 
 TARGET_FPS = 30
+
 class SharedRenderer:
     def __init__(self):
         self.sessions = {}
@@ -13,7 +16,7 @@ class SharedRenderer:
     async def _connect_frame_socket(self):
         while self.running:
             try:
-                _, writer = await asyncio.open_connection('rust-preview', 5001)
+                _, writer = await asyncio.open_connection(RUST_HOST, RUST_FRAME_SOCKET_PORT)
                 self.frame_writer = writer
                 logger.info("connected to Frame-Socket (5001) on rust!")
                 return

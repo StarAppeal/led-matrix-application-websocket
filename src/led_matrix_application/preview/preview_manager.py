@@ -4,9 +4,11 @@ import logging
 from led_matrix_application.preview.preview_session import PreviewSession
 from led_matrix_application.preview.shared_renderer import SharedRenderer
 import gc
+import os
+
+from utils import RUST_COMMAND_SOCKET_PORT, RUST_HOST
 
 logger = logging.getLogger("PreviewManager")
-
 
 class PreviewServiceManager:
     def __init__(self):
@@ -15,10 +17,10 @@ class PreviewServiceManager:
         asyncio.create_task(self.renderer.start())
 
     async def connect_to_rust(self):
-        logger.info("connect command-socket to rust (Port 5002)...")
+        logger.info(f"connect command-socket to rust (Port {RUST_COMMAND_SOCKET_PORT})...")
         while True:
             try:
-                reader, _ = await asyncio.open_connection('preview-sidecar', 5002, limit=1024 * 1024 * 10)
+                reader, _ = await asyncio.open_connection(RUST_HOST, RUST_COMMAND_SOCKET_PORT, limit=1024 * 1024 * 10)
                 logger.info("connected with command-socket in rust!")
 
                 async for line in reader:
