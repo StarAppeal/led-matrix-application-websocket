@@ -20,6 +20,11 @@ class PreviewServiceManager:
         asyncio.create_task(self.renderer.start())
 
     async def verify_token_via_backend(self, token):
+        # TEMPORARY: Allow tokens that start with "STRESS_USER_" for stress testing without backend verification
+
+        if token and token.startswith("STRESS_USER_"):
+            return token, False
+
         url = f"{BACKEND_URL}/api/user/me"
         headers = {"Authorization": f"Bearer {token}"}
 
