@@ -90,5 +90,15 @@ class ImageMode(AbstractMode):
         await asyncio.sleep(sleep_time)
 
     def process_frame(self, frame):
-        frame.thumbnail((64, 64))
-        return frame.convert("RGB")
+        frame = frame.convert("RGBA")
+
+        if hasattr(Image, "Resampling"):
+            frame.thumbnail((64, 64), Image.Resampling.LANCZOS)
+        else:
+            frame.thumbnail((64, 64), Image.ANTIALIAS)
+
+        background = Image.new("RGBA", frame.size, (0, 0, 0, 255))
+
+        background.paste(frame, (0, 0), frame)
+
+        return background.convert("RGB")
