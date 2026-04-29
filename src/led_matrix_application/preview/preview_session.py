@@ -50,24 +50,3 @@ class PreviewSession:
 
         except Exception as e:
             logger.error(f"Error in handle_command for {self.user_id}: {e}", exc_info=True)
-
-    async def send_frame(self, base64_str):
-        now = asyncio.get_event_loop().time()
-
-        if now - self.last_sent < 0.1:
-            return
-
-        self.last_sent = now
-        payload = json.dumps({
-            "type": "PREVIEW_FRAME",
-            "payload": f"data:image/png;base64,{base64_str}"
-        })
-
-        try:
-            await self.websocket.send(payload)
-        except websockets.ConnectionClosed as exc:
-            logger.info(
-                f"WebSocket disconnected: user_id={self.user_id} code={exc.code} reason={exc.reason}"
-            )
-        except Exception as e:
-            logger.error(f"Send error {self.user_id}: {e}")
