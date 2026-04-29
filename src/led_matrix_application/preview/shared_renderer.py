@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from utils import RUST_HOST, RUST_FRAME_SOCKET_PORT
+from led_matrix_application.utils import RUST_HOST, RUST_FRAME_SOCKET_PORT
 
 logger = logging.getLogger("SharedRenderer")
 

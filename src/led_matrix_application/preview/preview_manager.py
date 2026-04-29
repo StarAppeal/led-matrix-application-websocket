@@ -4,9 +4,8 @@ import logging
 from led_matrix_application.preview.preview_session import PreviewSession
 from led_matrix_application.preview.shared_renderer import SharedRenderer
 import gc
-import os
 
-from utils import RUST_COMMAND_SOCKET_PORT, RUST_HOST
+from led_matrix_application.utils import RUST_HOST, RUST_COMMAND_SOCKET_PORT
 
 logger = logging.getLogger("PreviewManager")
 
